@@ -1,0 +1,3 @@
+web1:
+  apache_access_log : true
+  php_extensions: [mcrypt, mysqli, mysql, mbstring, curl, gd]

@@ -10,9 +10,8 @@ if (! defined('PHPMYADMIN')) {
 }
 
 require_once 'libraries/Scripts.class.php';
-require_once 'libraries/RecentFavoriteTable.class.php';
+require_once 'libraries/RecentTable.class.php';
 require_once 'libraries/Menu.class.php';
-require_once 'libraries/Console.class.php';
 require_once 'libraries/navigation/Navigation.class.php';
 require_once 'libraries/url_generating.lib.php';
 
@@ -28,21 +27,14 @@ class PMA_Header
      * PMA_Scripts instance
      *
      * @access private
-     * @var PMA_Scripts
+     * @var object
      */
     private $_scripts;
-    /**
-     * PMA_Console instance
-     *
-     * @access private
-     * @var PMA_Console
-     */
-    private $_console;
     /**
      * PMA_Menu instance
      *
      * @access private
-     * @var PMA_Menu
+     * @var object
      */
     private $_menu;
     /**
@@ -114,6 +106,8 @@ class PMA_Header
 
     /**
      * Creates a new class instance
+     *
+     * @return new PMA_Header object
      */
     public function __construct()
     {
@@ -121,7 +115,6 @@ class PMA_Header
         $this->_isAjax = false;
         $this->_bodyId = '';
         $this->_title  = '';
-        $this->_console = new PMA_Console();
         $db = ! empty($GLOBALS['db']) ? $GLOBALS['db'] : '';
         $table = ! empty($GLOBALS['table']) ? $GLOBALS['table'] : '';
         $this->_menu   = new PMA_Menu(
@@ -153,42 +146,29 @@ class PMA_Header
      */
     private function _addDefaultScripts()
     {
-        // Localised strings
-        $params = array('lang' => $GLOBALS['lang']);
-        if (isset($GLOBALS['db'])) {
-            $params['db'] = $GLOBALS['db'];
-        }
-        $this->_scripts->addFile('jquery/jquery-1.8.3.min.js');
-        $this->_scripts->addFile(
-            'whitelist.php' . PMA_URL_getCommon($params), false, true
-        );
-        $this->_scripts->addFile('sprintf.js');
+        $this->_scripts->addFile('jquery/jquery-1.8.3.js');
         $this->_scripts->addFile('ajax.js');
         $this->_scripts->addFile('keyhandler.js');
-        $this->_scripts->addFile('jquery/jquery-ui-1.9.2.custom.min.js');
+        $this->_scripts->addFile('jquery/jquery-ui-1.9.2.custom.js');
+        $this->_scripts->addFile('jquery/jquery.sprintf.js');
         $this->_scripts->addFile('jquery/jquery.cookie.js');
         $this->_scripts->addFile('jquery/jquery.mousewheel.js');
         $this->_scripts->addFile('jquery/jquery.event.drag-2.2.js');
         $this->_scripts->addFile('jquery/jquery-ui-timepicker-addon.js');
         $this->_scripts->addFile('jquery/jquery.ba-hashchange-1.3.js');
         $this->_scripts->addFile('jquery/jquery.debounce-1.0.5.js');
-        $this->_scripts->addFile('menu-resizer.js');
-
-        // Cross-framing protection
-        if ($GLOBALS['cfg']['AllowThirdPartyFraming'] === false) {
-            $this->_scripts->addFile('cross_framing_protection.js');
-        }
-
+        $this->_scripts->addFile('jquery/jquery.menuResizer-1.0.js');
         $this->_scripts->addFile('rte.js');
-        if ($GLOBALS['cfg']['SendErrorReports'] !== 'never') {
-            $this->_scripts->addFile('tracekit/tracekit.js');
-            $this->_scripts->addFile('error_report.js');
-        }
 
         // Here would not be a good place to add CodeMirror because
         // the user preferences have not been merged at this point
 
-        $this->_scripts->addFile('messages.php' . PMA_URL_getCommon($params));
+        // Localised strings
+        $params = array('lang' => $GLOBALS['lang']);
+        if (isset($GLOBALS['db'])) {
+            $params['db'] = $GLOBALS['db'];
+        }
+        $this->_scripts->addFile('messages.php' . PMA_generate_common_url($params));
         // Append the theme id to this url to invalidate
         // the cache on a theme change. Though this might be
         // unavailable for fatal errors.
@@ -200,7 +180,6 @@ class PMA_Header
         $this->_scripts->addFile(
             'get_image.js.php?theme=' . $theme_id
         );
-        $this->_scripts->addFile('doclinks.js');
         $this->_scripts->addFile('functions.js');
         $this->_scripts->addFile('navigation.js');
         $this->_scripts->addFile('indexes.js');
@@ -218,18 +197,12 @@ class PMA_Header
     {
         $db = ! empty($GLOBALS['db']) ? $GLOBALS['db'] : '';
         $table = ! empty($GLOBALS['table']) ? $GLOBALS['table'] : '';
-        $pftext = ! empty($_SESSION['tmpval']['pftext'])
-            ? $_SESSION['tmpval']['pftext'] : '';
-
-        // not sure when this happens, but it happens
-        if (! isset($GLOBALS['collation_connection'])) {
-            $GLOBALS['collation_connection'] = 'utf8_general_ci';
-        }
-
         return array(
-            'common_query' => PMA_URL_getCommon(array(), 'text'),
+            'common_query' => PMA_generate_common_url('', '', '&'),
             'opendb_url' => $GLOBALS['cfg']['DefaultTabDatabase'],
             'safari_browser' => PMA_USR_BROWSER_AGENT == 'SAFARI' ? 1 : 0,
+            'querywindow_height' => $GLOBALS['cfg']['QueryWindowHeight'],
+            'querywindow_width' => $GLOBALS['cfg']['QueryWindowWidth'],
             'collation_connection' => $GLOBALS['collation_connection'],
             'lang' => $GLOBALS['lang'],
             'server' => $GLOBALS['server'],
@@ -244,11 +217,7 @@ class PMA_Header
             'pma_text_left_default_tab' => PMA_Util::getTitleForTarget(
                 $GLOBALS['cfg']['NavigationTreeDefaultTabTable']
             ),
-            'LimitChars' => $GLOBALS['cfg']['LimitChars'],
-            'pftext' => $pftext,
-            'confirm' => $GLOBALS['cfg']['Confirm'],
-            'LoginCookieValidity' => $GLOBALS['cfg']['LoginCookieValidity'],
-            'logged_in' => isset($GLOBALS['userlink']) ? true : false
+            'confirm' => $GLOBALS['cfg']['Confirm']
         );
     }
 
@@ -279,16 +248,15 @@ class PMA_Header
 
     /**
      * Set the ajax flag to indicate whether
-     * we are servicing an ajax request
+     * we are sevicing an ajax request
      *
-     * @param bool $isAjax Whether we are servicing an ajax request
+     * @param bool $isAjax Whether we are sevicing an ajax request
      *
      * @return void
      */
     public function setAjax($isAjax)
     {
         $this->_isAjax = ($isAjax == true);
-        $this->_console->setAjax($isAjax);
     }
 
     /**
@@ -340,10 +308,9 @@ class PMA_Header
      *
      * @return void
      */
-    public function disableMenuAndConsole()
+    public function disableMenu()
     {
         $this->_menuEnabled = false;
-        $this->_console->disable();
     }
 
     /**
@@ -363,7 +330,7 @@ class PMA_Header
      */
     public function enablePrintView()
     {
-        $this->disableMenuAndConsole();
+        $this->disableMenu();
         $this->setTitle(__('Print view') . ' - phpMyAdmin ' . PMA_VERSION);
         $this->_isPrintView = true;
     }
@@ -388,18 +355,12 @@ class PMA_Header
                 // so we can conditionally add CodeMirror
                 if ($GLOBALS['cfg']['CodemirrorEnable']) {
                     $this->_scripts->addFile('codemirror/lib/codemirror.js');
-                    $this->_scripts->addFile('codemirror/mode/sql/sql.js');
-                    $this->_scripts->addFile('codemirror/addon/runmode/runmode.js');
-                    $this->_scripts->addFile('codemirror/addon/hint/show-hint.js');
-                    $this->_scripts->addFile('codemirror/addon/hint/sql-hint.js');
+                    $this->_scripts->addFile('codemirror/mode/mysql/mysql.js');
                 }
                 if ($this->_userprefsOfferImport) {
                     $this->_scripts->addFile('config.js');
                 }
                 $retval .= $this->_scripts->getDisplay();
-                $retval .= '<noscript>';
-                $retval .= '<style>html{display:block}</style>';
-                $retval .= '</noscript>';
                 $retval .= $this->_getBodyStart();
                 if ($this->_menuEnabled && $GLOBALS['server'] > 0) {
                     $nav = new PMA_Navigation();
@@ -407,12 +368,10 @@ class PMA_Header
                 }
                 // Include possible custom headers
                 if (file_exists(CUSTOM_HEADER_FILE)) {
-                    $retval .= '<div id="pma_header">';
                     ob_start();
                     include CUSTOM_HEADER_FILE;
                     $retval .= ob_get_contents();
                     ob_end_clean();
-                    $retval .= '</div>';
                 }
                 // offer to load user preferences from localStorage
                 if ($this->_userprefsOfferImport) {
@@ -427,14 +386,13 @@ class PMA_Header
                 $retval .= $this->_getWarnings();
                 if ($this->_menuEnabled && $GLOBALS['server'] > 0) {
                     $retval .= $this->_menu->getDisplay();
-                    $retval .= '<span id="lock_page_icon"></span>';
+                    $pagetop_link = '<a id="goto_pagetop" href="#" title="%s">%s</a>';
                     $retval .= sprintf(
-                        '<a id="goto_pagetop" href="#" title="%s">%s</a>',
+                        $pagetop_link,
                         __('Click on the bar to scroll to top of page'),
                         PMA_Util::getImage('s_top.png')
                     );
                 }
-                $retval .= $this->_console->getDisplay();
                 $retval .= '<div id="page_content">';
                 $retval .= $this->getMessage();
             }
@@ -483,80 +441,52 @@ class PMA_Header
      */
     public function sendHttpHeaders()
     {
-        if (defined('TESTSUITE') && ! defined('PMA_TEST_HEADERS')) {
-            return;
-        }
-        if ($GLOBALS['PMA_Config']->isHttps()) {
-            $map_tile_urls = '';
-        } else {
-            $map_tile_urls = ' *.tile.openstreetmap.org *.tile.opencyclemap.org';
-        }
+        $https = $GLOBALS['PMA_Config']->isHttps();
+        $mapTilesUrls = ' *.tile.openstreetmap.org *.tile.opencyclemap.org';
 
         /**
          * Sends http headers
          */
         $GLOBALS['now'] = gmdate('D, d M Y H:i:s') . ' GMT';
-        if (!empty($GLOBALS['cfg']['CaptchaLoginPrivateKey'])
-            && !empty($GLOBALS['cfg']['CaptchaLoginPublicKey'])
-        ) {
-            $captcha_url = ' https://www.google.com ';
-        } else {
-            $captcha_url = '';
-        }
-        /* Prevent against ClickJacking by disabling framing */
-        if (! $GLOBALS['cfg']['AllowThirdPartyFraming']) {
+        if (! defined('TESTSUITE')) {
             header(
-                'X-Frame-Options: DENY'
+                "X-Content-Security-Policy: default-src 'self' "
+                . $GLOBALS['cfg']['CSPAllow'] . ';'
+                . "options inline-script eval-script;"
+                . "img-src 'self' data: "
+                . $GLOBALS['cfg']['CSPAllow']
+                . ($https ? "" : $mapTilesUrls)
+                . ";"
             );
+            if (PMA_USR_BROWSER_AGENT == 'SAFARI'
+                && PMA_USR_BROWSER_VER < '6.0.0'
+            ) {
+                header(
+                    "X-WebKit-CSP: allow 'self' "
+                    . $GLOBALS['cfg']['CSPAllow'] . ';'
+                    . "options inline-script eval-script;"
+                    . "img-src 'self' data: "
+                    . $GLOBALS['cfg']['CSPAllow']
+                    . ($https ? "" : $mapTilesUrls)
+                    . ";"
+                );
+            } else {
+                header(
+                    "X-WebKit-CSP: default-src 'self' "
+                    . $GLOBALS['cfg']['CSPAllow'] . ';'
+                    . "script-src 'self' "
+                    . $GLOBALS['cfg']['CSPAllow']
+                    . " 'unsafe-inline' 'unsafe-eval';"
+                    . "style-src 'self' 'unsafe-inline';"
+                    . "img-src 'self' data: "
+                    . $GLOBALS['cfg']['CSPAllow']
+                    . ($https ? "" : $mapTilesUrls)
+                    . ";"
+                );
+            }
         }
-        header(
-            "Content-Security-Policy: default-src 'self' "
-            . $captcha_url
-            . $GLOBALS['cfg']['CSPAllow'] . ';'
-            . "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
-            . $captcha_url
-            . $GLOBALS['cfg']['CSPAllow'] . ';'
-            . ";"
-            . "style-src 'self' 'unsafe-inline' "
-            . $captcha_url
-            . $GLOBALS['cfg']['CSPAllow']
-            . ";"
-            . "img-src 'self' data: "
-            . $GLOBALS['cfg']['CSPAllow']
-            . $map_tile_urls
-            . $captcha_url
-            . ";"
-        );
-        header(
-            "X-Content-Security-Policy: default-src 'self' "
-            . $captcha_url
-            . $GLOBALS['cfg']['CSPAllow'] . ';'
-            . "options inline-script eval-script;"
-            . "img-src 'self' data: "
-            . $GLOBALS['cfg']['CSPAllow']
-            . $map_tile_urls
-            . $captcha_url
-            . ";"
-        );
-        header(
-            "X-WebKit-CSP: default-src 'self' "
-            . $captcha_url
-            . $GLOBALS['cfg']['CSPAllow'] . ';'
-            . "script-src 'self' "
-            . $captcha_url
-            . $GLOBALS['cfg']['CSPAllow']
-            . " 'unsafe-inline' 'unsafe-eval';"
-            . "style-src 'self' 'unsafe-inline' "
-            . $captcha_url
-            . ';'
-            . "img-src 'self' data: "
-            . $GLOBALS['cfg']['CSPAllow']
-            . $map_tile_urls
-            . $captcha_url
-            . ";"
-        );
         PMA_noCacheHeader();
-        if (! defined('IS_TRANSFORMATION_WRAPPER')) {
+        if (! defined('IS_TRANSFORMATION_WRAPPER') && ! defined('TESTSUITE')) {
             // Define the charset to be used
             header('Content-Type: text/html; charset=utf-8');
         }
@@ -574,10 +504,7 @@ class PMA_Header
         $dir  = $GLOBALS['text_dir'];
 
         $retval  = "<!DOCTYPE HTML>";
-        $retval .= "<html lang='$lang' dir='$dir' class='";
-        $retval .= /*overload*/mb_strtolower(PMA_USR_BROWSER_AGENT) . " ";
-        $retval .= /*overload*/mb_strtolower(PMA_USR_BROWSER_AGENT)
-            . intval(PMA_USR_BROWSER_VER) . "'>";
+        $retval .= "<html lang='$lang' dir='$dir'>";
 
         return $retval;
     }
@@ -592,9 +519,6 @@ class PMA_Header
         $retval  = '<meta charset="utf-8" />';
         $retval .= '<meta name="robots" content="noindex,nofollow" />';
         $retval .= '<meta http-equiv="X-UA-Compatible" content="IE=Edge">';
-        if (! $GLOBALS['cfg']['AllowThirdPartyFraming']) {
-            $retval .= '<style id="cfs-style">html{display: none;}</style>';
-        }
         return $retval;
     }
 
@@ -611,7 +535,7 @@ class PMA_Header
             . 'type="image/x-icon" />';
         // stylesheets
         $basedir    = defined('PMA_PATH_TO_BASEDIR') ? PMA_PATH_TO_BASEDIR : '';
-        $common_url = PMA_URL_getCommon(array('server' => $GLOBALS['server']));
+        $common_url = PMA_generate_common_url(array('server' => $GLOBALS['server']));
         $theme_id   = $GLOBALS['PMA_Config']->getThemeUniqueValue();
         $theme_path = $GLOBALS['pmaThemePath'];
 
@@ -619,14 +543,12 @@ class PMA_Header
             $retval .= '<link rel="stylesheet" type="text/css" href="'
                 . $basedir . 'print.css" />';
         } else {
-            // load jQuery's CSS prior to our theme's CSS, to let the theme
-            // override jQuery's CSS
-            $retval .= '<link rel="stylesheet" type="text/css" href="'
-                . $theme_path . '/jquery/jquery-ui-1.9.2.custom.css" />';
             $retval .= '<link rel="stylesheet" type="text/css" href="'
                 . $basedir . 'phpmyadmin.css.php'
                 . $common_url . '&amp;nocache='
                 . $theme_id . $GLOBALS['text_dir'] . '" />';
+            $retval .= '<link rel="stylesheet" type="text/css" href="'
+                . $theme_path . '/jquery/jquery-ui-1.9.2.custom.css" />';
         }
 
         return $retval;
@@ -701,7 +623,7 @@ class PMA_Header
         if ($this->_warningsEnabled) {
             $retval .= "<noscript>";
             $retval .= PMA_message::error(
-                __("Javascript must be enabled past this point!")
+                __("Javascript must be enabled past this point")
             )->getDisplay();
             $retval .= "</noscript>";
         }
@@ -719,14 +641,13 @@ class PMA_Header
     private function _addRecentTable($db, $table)
     {
         $retval = '';
-        if ($this->_menuEnabled
-            && /*overload*/mb_strlen($table)
-            && $GLOBALS['cfg']['NumRecentTables'] > 0
-        ) {
-            $tmp_result = PMA_RecentFavoriteTable::getInstance('recent')
-                              ->add($db, $table);
+        if ($this->_menuEnabled && strlen($table) && $GLOBALS['cfg']['NumRecentTables'] > 0) {
+            $tmp_result = PMA_RecentTable::getInstance()->add($db, $table);
             if ($tmp_result === true) {
-                $retval = PMA_RecentFavoriteTable::getHtmlUpdateRecentTables();
+                $params  = array('ajax_request' => true, 'recent_table' => true);
+                $url     = 'index.php' . PMA_generate_common_url($params);
+                $retval  = '<a class="hide" id="update_recent_tables"';
+                $retval .= ' href="' . $url . '"></a>';
             } else {
                 $error  = $tmp_result;
                 $retval = $error->getDisplay();

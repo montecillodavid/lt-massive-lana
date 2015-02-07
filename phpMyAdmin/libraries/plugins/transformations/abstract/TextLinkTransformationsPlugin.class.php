@@ -12,7 +12,7 @@ if (! defined('PHPMYADMIN')) {
 
 /* Get the transformations interface */
 require_once 'libraries/plugins/TransformationsPlugin.class.php';
-/* For PMA_Transformation_globalHtmlReplace */
+/* For PMA_transformation_global_html_replace */
 require_once 'libraries/transformations.lib.php';
 
 /**
@@ -43,7 +43,7 @@ abstract class TextLinkTransformationsPlugin extends TransformationsPlugin
      * @param array  $options transformation options
      * @param string $meta    meta information
      *
-     * @return string
+     * @return void
      */
     public function applyTransformation($buffer, $options = array(), $meta = '')
     {
@@ -53,18 +53,34 @@ abstract class TextLinkTransformationsPlugin extends TransformationsPlugin
         $transform_options = array (
             'string' => '<a href="'
                 . PMA_linkURL((isset($options[0]) ? $options[0] : '') . $append_part)
-                . '" title="'
-                . htmlspecialchars(isset($options[1]) ? $options[1] : '')
-                . '" target="_new">'
-                . htmlspecialchars(isset($options[1]) ? $options[1] : $buffer)
+                . '" title="' . (isset($options[1]) ? $options[1] : '')
+                . '" target="_new">' . (isset($options[1]) ? $options[1] : $buffer)
                 . '</a>'
         );
 
-        return PMA_Transformation_globalHtmlReplace(
+        $buffer = PMA_transformation_global_html_replace(
             $buffer,
             $transform_options
         );
+
+        return $buffer;
     }
+
+    /**
+     * This method is called when any PluginManager to which the observer
+     * is attached calls PluginManager::notify()
+     *
+     * @param SplSubject $subject The PluginManager notifying the observer
+     *                            of an update.
+     *
+     * @todo implement
+     * @return void
+     */
+    public function update (SplSubject $subject)
+    {
+        ;
+    }
+
 
     /* ~~~~~~~~~~~~~~~~~~~~ Getters and Setters ~~~~~~~~~~~~~~~~~~~~ */
 
@@ -76,7 +92,7 @@ abstract class TextLinkTransformationsPlugin extends TransformationsPlugin
      */
     public static function getName()
     {
-        return "TextLink";
+        return "Link";
     }
 }
 ?>

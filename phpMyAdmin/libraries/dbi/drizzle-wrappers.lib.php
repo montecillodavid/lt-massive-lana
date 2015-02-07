@@ -60,7 +60,15 @@ class PMA_Drizzle extends Drizzle
     const BUFFER_ROW = 2;
 
     /**
-     * Creates a new database connection using TCP
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Creates a new database conection using TCP
      *
      * @param string  $host     Drizzle host
      * @param integer $port     Drizzle port
@@ -125,6 +133,8 @@ class PMA_DrizzleCon
      * Constructor
      *
      * @param DrizzleCon $dcon connection handle
+     *
+     * @return void
      */
     public function __construct(DrizzleCon $dcon)
     {
@@ -202,7 +212,7 @@ class PMA_DrizzleCon
 class PMA_DrizzleResult
 {
     /**
-     * Instance of DrizzleResult class
+     * Instamce of DrizzleResult class
      * @var DrizzleResult
      */
     private $_dresult;
@@ -288,7 +298,7 @@ class PMA_DrizzleResult
      */
     public function getColumns()
     {
-        if (! $this->_columns) {
+        if (!$this->_columns) {
             $this->_readColumns();
         }
         return $this->_columns;
@@ -314,7 +324,7 @@ class PMA_DrizzleResult
      */
     private function _transformResultRow(&$row, $fetchMode)
     {
-        if (! $row) {
+        if (!$row) {
             return;
         }
 
@@ -344,7 +354,7 @@ class PMA_DrizzleResult
     {
         // read column names on first fetch, only buffered results
         // allow for reading it later
-        if (! $this->_columns) {
+        if (!$this->_columns) {
             $this->_readColumns();
         }
         if ($fetchMode === null) {

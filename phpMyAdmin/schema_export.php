@@ -1,7 +1,6 @@
 <?php
 /* vim: set expandtab sw=4 ts=4 sts=4: */
 /**
- * Schema export handler
  *
  * @package PhpMyAdmin
  */
@@ -18,9 +17,9 @@ require 'libraries/StorageEngine.class.php';
  */
 $cfgRelation = PMA_getRelationsParam();
 
+require_once 'libraries/transformations.lib.php';
 require_once 'libraries/Index.class.php';
-require_once 'libraries/pmd_common.php';
-require_once 'libraries/plugin_interface.lib.php';
+require_once 'libraries/schema/Export_Relation_Schema.class.php';
 
 /**
  * get all the export options and verify
@@ -29,49 +28,39 @@ require_once 'libraries/plugin_interface.lib.php';
  */
 
 $post_params = array(
-    'db'
+    'all_tables_same_width',
+    'chpage',
+    'db',
+    'do',
+    'export_type',
+    'orientation',
+    'paper',
+    'names',
+    'pdf_page_number',
+    'show_color',
+    'show_grid',
+    'show_keys',
+    'show_table_dimension',
+    'with_doc'
 );
 foreach ($post_params as $one_post_param) {
-    if (isset($_REQUEST[$one_post_param])) {
-        $GLOBALS[$one_post_param] = $_REQUEST[$one_post_param];
+    if (isset($_POST[$one_post_param])) {
+        $GLOBALS[$one_post_param] = $_POST[$one_post_param];
     }
 }
 
-PMA_processExportSchema($_REQUEST['export_type']);
+if (! isset($export_type) || ! preg_match('/^[a-zA-Z]+$/', $export_type)) {
+    $export_type = 'pdf';
+}
+PMA_DBI_select_db($db);
 
-/**
- * get all the export options and verify
- * call and include the appropriate Schema Class depending on $export_type
- *
- * @param string $export_type format of the export
- *
- * @return void
- */
-function PMA_processExportSchema($export_type)
-{
-    /**
-     * default is PDF, otherwise validate it's only letters a-z
-     */
-    if (! isset($export_type) || ! preg_match('/^[a-zA-Z]+$/', $export_type)) {
-        $export_type = 'pdf';
-    }
-
-    // sanitize this parameter which will be used below in a file inclusion
-    $export_type = PMA_securePath($export_type);
-
-    // get the specific plugin
-    $export_plugin = PMA_getPlugin(
-        "schema",
+$path = PMA_securePath(ucfirst($export_type));
+if (!file_exists('libraries/schema/' . $path . '_Relation_Schema.class.php')) {
+    PMA_Export_Relation_Schema::dieSchema(
+        $_POST['chpage'],
         $export_type,
-        'libraries/plugins/schema/'
+        __('File doesn\'t exist')
     );
-
-    // Check schema export type
-    if (! isset($export_plugin)) {
-        PMA_fatalError(__('Bad type!'));
-    }
-
-    $GLOBALS['dbi']->selectDb($GLOBALS['db']);
-    $export_plugin->exportSchema($GLOBALS['db']);
 }
-?>
+require "libraries/schema/".$path.'_Relation_Schema.class.php';
+$obj_schema = eval("new PMA_".$path."_Relation_Schema();");

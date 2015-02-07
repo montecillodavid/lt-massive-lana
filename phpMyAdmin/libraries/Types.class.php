@@ -19,7 +19,7 @@ class PMA_Types
     /**
      * Returns list of unary operators.
      *
-     * @return string[]
+     * @return array
      */
     public function getUnaryOperators()
     {
@@ -46,7 +46,7 @@ class PMA_Types
     /**
      * Returns list of operators checking for NULL.
      *
-     * @return string[]
+     * @return array
      */
     public function getNullOperators()
     {
@@ -59,7 +59,7 @@ class PMA_Types
     /**
      * ENUM search operators
      *
-     * @return string[]
+     * @return array
      */
     public function getEnumOperators()
     {
@@ -72,7 +72,7 @@ class PMA_Types
     /**
      * TEXT search operators
      *
-     * @return string[]
+     * @return array
      */
     public function getTextOperators()
     {
@@ -97,7 +97,7 @@ class PMA_Types
     /**
      * Number search operators
      *
-     * @return string[]
+     * @return array
      */
     public function getNumberOperators()
     {
@@ -124,7 +124,7 @@ class PMA_Types
      * @param string  $type Type of field
      * @param boolean $null Whether field can be NULL
      *
-     * @return string[]
+     * @return array
      */
     public function getTypeOperators($type, $null)
     {
@@ -161,13 +161,12 @@ class PMA_Types
 
         foreach ($this->getTypeOperators($type, $null) as $fc) {
             if (isset($selectedOperator) && $selectedOperator == $fc) {
-                $selected = ' selected="selected"';
+                $html .= '<option value="' . htmlspecialchars($fc)  . '" selected="selected">'
+                    . htmlspecialchars($fc)  . '</option>';
             } else {
-                $selected = '';
+                $html .= '<option value="' . htmlspecialchars($fc)  . '">'
+                    . htmlspecialchars($fc)  . '</option>';
             }
-            $html .= '<option value="' . htmlspecialchars($fc)  . '"'
-                . $selected . '>'
-                . htmlspecialchars($fc)  . '</option>';
         }
 
         return $html;
@@ -205,7 +204,7 @@ class PMA_Types
      *
      * @param string $class The class to get function list.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getFunctionsClass($class)
@@ -218,7 +217,7 @@ class PMA_Types
      *
      * @param string $type The data type to get function list.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getFunctions($type)
@@ -230,7 +229,7 @@ class PMA_Types
     /**
      * Returns array of all functions available.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getAllFunctions()
@@ -248,7 +247,7 @@ class PMA_Types
     /**
      * Returns array of all attributes available.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getAttributes()
@@ -259,7 +258,7 @@ class PMA_Types
     /**
      * Returns array of all column types available.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getColumns()
@@ -271,29 +270,6 @@ class PMA_Types
             'TEXT',
             'DATE',
         );
-    }
-
-    /**
-     * Returns an array of integer types
-     *
-     * @return string[] integer types
-     */
-    public function getIntegerTypes()
-    {
-        return array();
-    }
-
-    /**
-     * Returns the min and max values of a given integer type
-     *
-     * @param string  $type   integer type
-     * @param boolean $signed whether signed
-     *
-     * @return string[] min and max values
-     */
-    public function getIntegerRange($type, $signed = true)
-    {
-        return array('', '');
     }
 }
 
@@ -314,7 +290,7 @@ class PMA_Types_MySQL extends PMA_Types
      */
     public function getTypeDescription($type)
     {
-        $type = /*overload*/mb_strtoupper($type);
+        $type = strtoupper($type);
         switch ($type) {
         case 'TINYINT':
             return __('A 1-byte integer, signed range is -128 to 127, unsigned range is 0 to 255');
@@ -323,7 +299,7 @@ class PMA_Types_MySQL extends PMA_Types
         case 'MEDIUMINT':
             return __('A 3-byte integer, signed range is -8,388,608 to 8,388,607, unsigned range is 0 to 16,777,215');
         case 'INT':
-            return __('A 4-byte integer, signed range is -2,147,483,648 to 2,147,483,647, unsigned range is 0 to 4,294,967,295');
+            return __('A 4-byte integer, signed range is -2,147,483,648 to 2,147,483,647, unsigned range is 0 to 4,294,967,295.');
         case 'BIGINT':
             return __('An 8-byte integer, signed range is -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807, unsigned range is 0 to 18,446,744,073,709,551,615');
         case 'DECIMAL':
@@ -409,7 +385,7 @@ class PMA_Types_MySQL extends PMA_Types
      */
     public function getTypeClass($type)
     {
-        $type = /*overload*/mb_strtoupper($type);
+        $type = strtoupper($type);
         switch ($type) {
         case 'TINYINT':
         case 'SMALLINT':
@@ -467,7 +443,7 @@ class PMA_Types_MySQL extends PMA_Types
      *
      * @param string $class The class to get function list.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getFunctionsClass($class)
@@ -475,8 +451,6 @@ class PMA_Types_MySQL extends PMA_Types
         switch ($class) {
         case 'CHAR':
             return array(
-                'AES_DECRYPT',
-                'AES_ENCRYPT',
                 'BIN',
                 'CHAR',
                 'COMPRESS',
@@ -583,6 +557,13 @@ class PMA_Types_MySQL extends PMA_Types
                 'WEEKOFYEAR',
                 'YEARWEEK',
             );
+            // remove functions that are unavailable on current server
+            if (PMA_MYSQL_INT_VERSION < 50500) {
+                $ret = array_diff($ret, array('TO_SECONDS'));
+            }
+            if (PMA_MYSQL_INT_VERSION < 50120) {
+                $ret = array_diff($ret, array('UUID_SHORT'));
+            }
             return $ret;
 
         case 'SPATIAL':
@@ -613,7 +594,7 @@ class PMA_Types_MySQL extends PMA_Types
     /**
      * Returns array of all attributes available.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getAttributes()
@@ -633,7 +614,7 @@ class PMA_Types_MySQL extends PMA_Types
      * VARCHAR, TINYINT, TEXT and DATE are listed first, based on
      * estimated popularity.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getColumns()
@@ -656,6 +637,7 @@ class PMA_Types_MySQL extends PMA_Types
             'BOOLEAN',
             'SERIAL',
         );
+
 
         // Date/Time
         $ret[_pgettext('date and time types', 'Date and time')] = array(
@@ -701,48 +683,6 @@ class PMA_Types_MySQL extends PMA_Types
 
         return $ret;
     }
-
-    /**
-     * Returns an array of integer types
-     *
-     * @return string[] integer types
-     */
-    public function getIntegerTypes()
-    {
-        return array('tinyint', 'smallint', 'mediumint', 'int', 'bigint');
-    }
-
-    /**
-     * Returns the min and max values of a given integer type
-     *
-     * @param string  $type   integer type
-     * @param boolean $signed whether signed
-     *
-     * @return string[] min and max values
-     */
-    public function getIntegerRange($type, $signed = true)
-    {
-        static $min_max_data = array(
-            'unsigned' => array(
-                'tinyint'   => array('0', '255'),
-                'smallint'  => array('0', '65535'),
-                'mediumint' => array('0', '16777215'),
-                'int'       => array('0', '4294967295'),
-                'bigint'    => array('0', '18446744073709551615')
-            ),
-            'signed' => array(
-                'tinyint'   => array('-128', '127'),
-                'smallint'  => array('-32768', '32767'),
-                'mediumint' => array('-8388608', '8388607'),
-                'int'       => array('-2147483648', '2147483647'),
-                'bigint'    => array('-9223372036854775808', '9223372036854775807')
-            )
-        );
-        $relevantArray = $signed
-            ? $min_max_data['signed']
-            : $min_max_data['unsigned'];
-        return isset($relevantArray[$type]) ? $relevantArray[$type] : array('', '');
-    }
 }
 
 /**
@@ -762,7 +702,7 @@ class PMA_Types_Drizzle extends PMA_Types
      */
     public function getTypeDescription($type)
     {
-        $type = /*overload*/mb_strtoupper($type);
+        $type = strtoupper($type);
         switch ($type) {
         case 'INTEGER':
             return __('A 4-byte integer, range is -2,147,483,648 to 2,147,483,647');
@@ -811,7 +751,7 @@ class PMA_Types_Drizzle extends PMA_Types
      */
     public function getTypeClass($type)
     {
-        $type = /*overload*/mb_strtoupper($type);
+        $type = strtoupper($type);
         switch ($type) {
         case 'INTEGER':
         case 'BIGINT':
@@ -845,7 +785,7 @@ class PMA_Types_Drizzle extends PMA_Types
      *
      * @param string $class The class to get function list.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getFunctionsClass($class)
@@ -891,7 +831,7 @@ class PMA_Types_Drizzle extends PMA_Types
                 WHERE plugin_name IN ('" . implode("','", $functions) . "')
                   AND plugin_type = 'Function'
                   AND is_active";
-            $drizzle_functions = $GLOBALS['dbi']->fetchResult($sql, 'f', 'f');
+            $drizzle_functions = PMA_DBI_fetch_result($sql, 'f', 'f');
             if (count($drizzle_functions) > 0) {
                 $ret = array_merge($ret, $drizzle_functions);
                 sort($ret);
@@ -979,7 +919,7 @@ class PMA_Types_Drizzle extends PMA_Types
     /**
      * Returns array of all attributes available.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getAttributes()
@@ -993,7 +933,7 @@ class PMA_Types_Drizzle extends PMA_Types
     /**
      * Returns array of all column types available.
      *
-     * @return string[]
+     * @return array
      *
      */
     public function getColumns()
@@ -1040,32 +980,5 @@ class PMA_Types_Drizzle extends PMA_Types
         $ret[_pgettext('string types', 'String')] = $types_string;
 
         return $ret;
-    }
-
-    /**
-     * Returns an array of integer types
-     *
-     * @return string[] integer types
-     */
-    public function getIntegerTypes()
-    {
-        return array('integer', 'bigint');
-    }
-
-    /**
-     * Returns the min and max values of a given integer type
-     *
-     * @param string  $type   integer type
-     * @param boolean $signed whether signed (ignored for Drizzle)
-     *
-     * @return string[] min and max values
-     */
-    public function getIntegerRange($type, $signed = true)
-    {
-        static $min_max_data = array(
-            'integer' => array('-2147483648', '2147483647'),
-            'bigint'  => array('-9223372036854775808', '9223372036854775807')
-        );
-        return isset($min_max_data[$type]) ? $min_max_data[$type] : array('', '');
     }
 }

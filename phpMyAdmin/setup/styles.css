@@ -1,8 +1,6 @@
 /* global styles */
 
 body {
-    margin-right: auto;
-    min-width: 960px;
     padding-bottom: 1em;
     color: #444;
     font: .8em sans-serif;
@@ -73,7 +71,7 @@ h1 {
     zoom: 1; /* IE fix */
 }
 
-#menu li a:hover, #menu li a:active, #menu li a.active {
+#menu li a:hover, #menu li a:active {
     background-color: #e4e4e4;
 }
 
@@ -81,7 +79,6 @@ h1 {
 
 #page {
     margin-left: 220px;
-    margin-right: 25px;
 }
 
 #footer {
@@ -97,11 +94,11 @@ h1 {
 /* phpMyAdmin logo colors */
 
 .blue {
-    color: #666699;
+    color: #7584B3;
 }
 
 .orange {
-    color: #FF9900;
+    color: #FFAD17;
 }
 
 .red {
@@ -208,8 +205,8 @@ div.notice[id^=version_check] h4 {
 /* form tabs */
 
 ul.tabs {
-    margin: 1.1em 2px 0;
-    padding: 0 0 3px 0;
+    margin: 1.1em .2em 0;
+    padding: 0 0 .3em 0;
     list-style: none;
     font-weight: bold;
 }
@@ -221,7 +218,7 @@ ul.tabs li {
 
 ul.tabs li a {
     display: block;
-    margin: 1px .2em 0;
+    margin: .1em .2em 0;
     white-space: nowrap;
     text-decoration: none;
     border: 1px solid #D5D5D5;
@@ -253,7 +250,7 @@ ul.tabs li.active a {
 }
 
 .tabs_contents {
-    margin-top: 13px;
+    margin-top: 1em;
 }
 
 .tabs_contents fieldset {
@@ -422,9 +419,7 @@ fieldset .lastrow, .form .lastrow {
     text-align: center;
 }
 
-input[type=text],
-input[type=password],
-input[type=number] {
+input[type=text] {
     border-radius: 2px;
     -moz-border-radius: 2px;
     -webkit-border-radius: 2px;
@@ -438,6 +433,24 @@ input[type=number] {
     color: #555;
     padding: 4px;
     margin: 6px;
+
+}
+
+input[type=password] {
+    border-radius: 2px;
+    -moz-border-radius: 2px;
+    -webkit-border-radius: 2px;
+
+    box-shadow: 0 1px 2px #ddd;
+    -moz-box-shadow: 0 1px 2px #ddd;
+    -webkit-box-shadow: 0 1px 2px #ddd;
+
+    background: white;
+    border: 1px solid #aaa;
+    color: #555;
+    padding: 4px;
+    margin: 6px;
+
 }
 
 input[type=submit],
@@ -517,7 +530,6 @@ select {
     color: #333;
     padding: 3px;
     background: white;
-    margin: 6px;
 }
 
 fieldset.simple th, fieldset.simple td {

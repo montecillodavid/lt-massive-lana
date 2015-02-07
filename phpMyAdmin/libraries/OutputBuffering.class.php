@@ -1,4 +1,5 @@
-<?php /* vim: set expandtab sw=4 ts=4 sts=4: */
+<?php
+/* vim: set expandtab sw=4 ts=4 sts=4: */
 /**
  * Output buffering wrapper
  *
@@ -22,6 +23,8 @@ class PMA_OutputBuffering
 
     /**
      * Initializes class
+     *
+     * @return void
      */
     private function __construct()
     {
@@ -47,8 +50,8 @@ class PMA_OutputBuffering
             } elseif (function_exists('ob_get_level') && ob_get_level() > 0) {
                 // If output buffering is enabled in php.ini it's not possible to
                 // add the ob_gzhandler without a warning message from php 4.3.0.
-                // Being better safe than sorry, check for any existing output
-                // handler instead of just checking the 'output_buffering' setting.
+                // Being better safe than sorry, check for any existing output handler
+                // instead of just checking the 'output_buffering' setting.
                 $mode = 0;
             } else {
                 $mode = 1;
@@ -56,7 +59,7 @@ class PMA_OutputBuffering
         }
         // Zero (0) is no mode or in other words output buffering is OFF.
         // Follow 2^0, 2^1, 2^2, 2^3 type values for the modes.
-        // Useful if we ever decide to combine modes.  Then a bitmask field of
+        // Usefull if we ever decide to combine modes.  Then a bitmask field of
         // the sum of all modes will be the natural choice.
         return $mode;
     }
@@ -84,7 +87,7 @@ class PMA_OutputBuffering
     public function start()
     {
         if (! $this->_on) {
-            if ($this->_mode && function_exists('ob_gzhandler')) {
+            if ($this->_mode) {
                 ob_start('ob_gzhandler');
             }
             ob_start();
@@ -117,7 +120,7 @@ class PMA_OutputBuffering
     /**
      * Gets buffer content
      *
-     * @return string buffer content
+     * @return buffer content
      */
     public function getContents()
     {
@@ -133,9 +136,12 @@ class PMA_OutputBuffering
     {
         if (ob_get_status() && $this->_mode) {
             ob_flush();
-        } else {
-            flush();
         }
+        /**
+         * previously we had here an "else flush()" but some PHP versions
+         * (at least PHP 5.2.11) have a bug (49816) that produces garbled
+         * data
+         */
     }
 }
 

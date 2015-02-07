@@ -57,7 +57,7 @@ class ZipFile
 
     /**
      * Sets member variable this -> doWrite to true
-     * - Should be called immediately after class instantiation
+     * - Should be called immediately after class instantiantion
      * - If set to true, then ZIP archive are echo'ed to STDOUT as each
      *   file is added via this -> addfile(), and central directories are
      *   echoed to STDOUT on final call to this -> file().  Also,
@@ -120,7 +120,12 @@ class ZipFile
     {
         $name     = str_replace('\\', '/', $name);
 
-        $hexdtime = pack('V', $this->unix2DosTime($time));
+        $dtime    = substr("00000000" . dechex($this->unix2DosTime($time)), -8);
+        $hexdtime = '\x' . $dtime[6] . $dtime[7]
+                  . '\x' . $dtime[4] . $dtime[5]
+                  . '\x' . $dtime[2] . $dtime[3]
+                  . '\x' . $dtime[0] . $dtime[1];
+        eval('$hexdtime = "' . $hexdtime . '";');
 
         $fr   = "\x50\x4b\x03\x04";
         $fr   .= "\x14\x00";            // ver needed to extract

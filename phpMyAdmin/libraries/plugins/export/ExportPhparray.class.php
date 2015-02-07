@@ -70,6 +70,19 @@ class ExportPhparray extends ExportPlugin
     }
 
     /**
+     * This method is called when any PluginManager to which the observer
+     * is attached calls PluginManager::notify()
+     *
+     * @param SplSubject $subject The PluginManager notifying the observer
+     *                            of an update.
+     *
+     * @return void
+     */
+    public function update (SplSubject $subject)
+    {
+    }
+
+    /**
      * Outputs export header
      *
      * @return bool Whether it succeeded
@@ -99,19 +112,15 @@ class ExportPhparray extends ExportPlugin
     /**
      * Outputs database header
      *
-     * @param string $db       Database name
-     * @param string $db_alias Aliases of db
+     * @param string $db Database name
      *
      * @return bool Whether it succeeded
      */
-    public function exportDBHeader ($db, $db_alias = '')
+    public function exportDBHeader ($db)
     {
-        if (empty($db_alias)) {
-            $db_alias = $db;
-        }
         PMA_exportOutputHandler(
             '//' . $GLOBALS['crlf']
-            . '// Database ' . PMA_Util::backquote($db_alias)
+            . '// Database ' . PMA_Util::backquote($db)
             . $GLOBALS['crlf'] . '//' . $GLOBALS['crlf']
         );
         return true;
@@ -132,60 +141,45 @@ class ExportPhparray extends ExportPlugin
     /**
      * Outputs CREATE DATABASE statement
      *
-     * @param string $db       Database name
-     * @param string $db_alias Aliases of db
+     * @param string $db Database name
      *
      * @return bool Whether it succeeded
      */
-    public function exportDBCreate($db, $db_alias = '')
+    public function exportDBCreate($db)
     {
         return true;
     }
 
     /**
-     * Outputs the content of a table in PHP array format
+     * Outputs the content of a table in NHibernate format
      *
      * @param string $db        database name
      * @param string $table     table name
      * @param string $crlf      the end of line sequence
      * @param string $error_url the url to go back in case of error
      * @param string $sql_query SQL query for obtaining data
-     * @param array  $aliases   Aliases of db/table/columns
      *
      * @return bool Whether it succeeded
      */
-    public function exportData(
-        $db, $table, $crlf, $error_url, $sql_query, $aliases = array()
-    ) {
-        $db_alias = $db;
-        $table_alias = $table;
-        $this->initAlias($aliases, $db_alias, $table_alias);
+    public function exportData($db, $table, $crlf, $error_url, $sql_query)
+    {
+        $result = PMA_DBI_query($sql_query, null, PMA_DBI_QUERY_UNBUFFERED);
 
-        $result = $GLOBALS['dbi']->query(
-            $sql_query, null, PMA_DatabaseInterface::QUERY_UNBUFFERED
-        );
-
-        $columns_cnt = $GLOBALS['dbi']->numFields($result);
-        $columns = array();
+        $columns_cnt = PMA_DBI_num_fields($result);
         for ($i = 0; $i < $columns_cnt; $i++) {
-            $col_as = $GLOBALS['dbi']->fieldName($result, $i);
-            if (!empty($aliases[$db]['tables'][$table]['columns'][$col_as])) {
-                $col_as = $aliases[$db]['tables'][$table]['columns'][$col_as];
-            }
-            $columns[$i] = stripslashes($col_as);
+            $columns[$i] = stripslashes(PMA_DBI_field_name($result, $i));
         }
+        unset($i);
 
         // fix variable names (based on
         // http://www.php.net/manual/language.variables.basics.php)
         if (! preg_match(
             '/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/',
-            $table_alias
+            $table
         )) {
             // fix invalid characters in variable names by replacing them with
             // underscores
-            $tablefixed = preg_replace(
-                '/[^a-zA-Z0-9_\x7f-\xff]/', '_', $table_alias
-            );
+            $tablefixed = preg_replace('/[^a-zA-Z0-9_\x7f-\xff]/', '_', $table);
 
             // variable name must not start with a number or dash...
             if (preg_match('/^[a-zA-Z_\x7f-\xff]/', $tablefixed) == false) {
@@ -199,11 +193,11 @@ class ExportPhparray extends ExportPlugin
         $record_cnt = 0;
         // Output table name as comment
         $buffer .= $crlf . '// '
-            . PMA_Util::backquote($db_alias) . '.'
-            . PMA_Util::backquote($table_alias) . $crlf;
+                    . PMA_Util::backquote($db) . '.'
+                    . PMA_Util::backquote($table) . $crlf;
         $buffer .= '$' . $tablefixed . ' = array(';
-
-        while ($record = $GLOBALS['dbi']->fetchRow($result)) {
+        
+        while ($record = PMA_DBI_fetch_row($result)) {
             $record_cnt++;
 
             if ($record_cnt == 1) {
@@ -226,7 +220,7 @@ class ExportPhparray extends ExportPlugin
             return false;
         }
 
-        $GLOBALS['dbi']->freeResult($result);
+        PMA_DBI_free_result($result);
         return true;
     }
 }

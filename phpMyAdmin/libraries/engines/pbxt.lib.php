@@ -14,14 +14,14 @@ if (! defined('PHPMYADMIN')) {
  *
  * @package PhpMyAdmin-Engines
  */
-class PMA_StorageEngine_Pbxt extends PMA_StorageEngine
+class PMA_StorageEngine_pbxt extends PMA_StorageEngine
 {
     /**
      * Returns array with variable names dedicated to PBXT storage engine
      *
      * @return array   variable names
      */
-    public function getVariables()
+    function getVariables()
     {
         return array(
             'pbxt_index_cache_size' => array(
@@ -95,7 +95,7 @@ class PMA_StorageEngine_Pbxt extends PMA_StorageEngine
      *
      * @return string the formatted value and its unit
      */
-    public function resolveTypeSize($formatted_size)
+    function resolveTypeSize($formatted_size)
     {
         if (preg_match('/^[0-9]+[a-zA-Z]+$/', $formatted_size)) {
             $value = PMA_Util::extractValueFromFormattedSize($formatted_size);
@@ -106,12 +106,7 @@ class PMA_StorageEngine_Pbxt extends PMA_StorageEngine
     }
 
     //--------------------
-    /**
-     * Get information about pages
-     *
-     * @return array Information about pages
-     */
-    public function getInfoPages()
+    function getInfoPages()
     {
         $pages = array();
         $pages['Documentation'] = __('Documentation');
@@ -119,27 +114,25 @@ class PMA_StorageEngine_Pbxt extends PMA_StorageEngine
     }
 
     //--------------------
-    /**
-     * Get content of documentation page
-     *
-     * @return string
-     */
-    public function getPageDocumentation()
+    function getPage($id)
     {
-        $output = '<p>' . sprintf(
-            __(
-                'Documentation and further information about PBXT'
-                . ' can be found on the %sPrimeBase XT Home Page%s.'
-            ),
-            '<a href="' . PMA_linkURL('http://www.primebase.com/xt/')
-            . '" target="_blank">', '</a>'
-        )
+        if (! array_key_exists($id, $this->getInfoPages())) {
+            return false;
+        }
+
+        $id = 'getPage' . $id;
+
+        return $this->$id();
+    }
+
+    function getPageDocumentation()
+    {
+        $output = '<p>'
+        . sprintf(__('Documentation and further information about PBXT can be found on the %sPrimeBase XT Home Page%s.'), '<a href="' . PMA_linkURL('http://www.primebase.com/xt/') . '" target="_blank">', '</a>')
         . '</p>' . "\n"
         . '<h3>' . __('Related Links') . '</h3>' . "\n"
         . '<ul>' . "\n"
-        . '<li><a href="' . PMA_linkURL('http://pbxt.blogspot.com/')
-        . '" target="_blank">' . __('The PrimeBase XT Blog by Paul McCullagh')
-        . '</a></li>' . "\n"
+        . '<li><a href="' . PMA_linkURL('http://pbxt.blogspot.com/') . '" target="_blank">' . __('The PrimeBase XT Blog by Paul McCullagh') . '</a></li>' . "\n"
         . '</ul>' . "\n";
 
         return $output;

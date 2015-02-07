@@ -11,11 +11,11 @@
  *
  * @param string $plugin_type   the type of the plugin (import, export, etc)
  * @param string $plugin_format the format of the plugin (sql, xml, et )
- * @param string $plugins_dir   directory with plugins
+ * @param string $plugins_dir   directrory with plugins
  * @param mixed  $plugin_param  parameter to plugin by which they can
  *                              decide whether they can work
  *
- * @return object|null new plugin instance
+ * @return new plugin instance
  */
 function PMA_getPlugin(
     $plugin_type,
@@ -24,10 +24,10 @@ function PMA_getPlugin(
     $plugin_param = false
 ) {
     $GLOBALS['plugin_param'] = $plugin_param;
-    $class_name = /*overload*/mb_strtoupper($plugin_type[0])
-        . /*overload*/mb_strtolower(/*overload*/mb_substr($plugin_type, 1))
-        . /*overload*/mb_strtoupper($plugin_format[0])
-        . /*overload*/mb_strtolower(/*overload*/mb_substr($plugin_format, 1));
+    $class_name = strtoupper($plugin_type[0])
+        . strtolower(substr($plugin_type, 1))
+        . strtoupper($plugin_format[0])
+        . strtolower(substr($plugin_format, 1));
     $file = $class_name . ".class.php";
     if (is_file($plugins_dir . $file)) {
         include_once $plugins_dir . $file;
@@ -41,7 +41,7 @@ function PMA_getPlugin(
  * Reads all plugin information from directory $plugins_dir
  *
  * @param string $plugin_type  the type of the plugin (import, export, etc)
- * @param string $plugins_dir  directory with plugins
+ * @param string $plugins_dir  directrory with plugins
  * @param mixed  $plugin_param parameter to plugin by which they can
  *                             decide whether they can work
  *
@@ -52,38 +52,30 @@ function PMA_getPlugins($plugin_type, $plugins_dir, $plugin_param)
     $GLOBALS['plugin_param'] = $plugin_param;
     /* Scan for plugins */
     $plugin_list = array();
-    if (!($handle = @opendir($plugins_dir))) {
-        ksort($plugin_list);
-        return $plugin_list;
-    }
-
-    //@todo Find a way to use PMA_StringMB with UTF-8 instead of mb_*.
-    while ($file = @readdir($handle)) {
-        // In some situations, Mac OS creates a new file for each file
-        // (for example ._csv.php) so the following regexp
-        // matches a file which does not start with a dot but ends
-        // with ".php"
-        $class_type = mb_strtoupper($plugin_type[0], 'UTF-8')
-            . mb_strtolower(/*overload*/mb_substr($plugin_type, 1), 'UTF-8');
-        if (is_file($plugins_dir . $file)
-            && preg_match(
-                '@^' . $class_type . '(.+)\.class\.php$@i',
-                $file,
-                $matches
-            )
-        ) {
-            $GLOBALS['skip_import'] = false;
-            include_once $plugins_dir . $file;
-            if (! $GLOBALS['skip_import']) {
-                $class_name = $class_type . $matches[1];
-                $plugin = new $class_name;
-                if (null !== $plugin->getProperties()) {
-                    $plugin_list[] = $plugin;
+    if ($handle = @opendir($plugins_dir)) {
+        while ($file = @readdir($handle)) {
+            // In some situations, Mac OS creates a new file for each file
+            // (for example ._csv.php) so the following regexp
+            // matches a file which does not start with a dot but ends
+            // with ".php"
+            $class_type = strtoupper($plugin_type[0])
+                . strtolower(substr($plugin_type, 1));
+            if (is_file($plugins_dir . $file)
+                && preg_match(
+                    '@^' . $class_type . '(.+)\.class\.php$@i',
+                    $file,
+                    $matches
+                )
+            ) {
+                $GLOBALS['skip_import'] = false;
+                include_once $plugins_dir . $file;
+                if (! $GLOBALS['skip_import']) {
+                    $class_name = $class_type . $matches[1];
+                    $plugin_list [] = new $class_name;
                 }
             }
         }
     }
-
     ksort($plugin_list);
     return $plugin_list;
 }
@@ -108,15 +100,18 @@ function PMA_getString($name)
  *                        $GLOBALS['cfg'][$section] for plugin
  * @param string $opt     name of option
  *
- * @return string  html input tag option 'checked'
+ * @return string  hmtl input tag option 'checked'
  */
 function PMA_pluginCheckboxCheck($section, $opt)
 {
     // If the form is being repopulated using $_GET data, that is priority
     if (isset($_GET[$opt])
         || ! isset($_GET['repopulate'])
-        && ((! empty($GLOBALS['timeout_passed']) && isset($_REQUEST[$opt]))
-        || ! empty($GLOBALS['cfg'][$section][$opt]))
+        && ((isset($GLOBALS['timeout_passed'])
+        && $GLOBALS['timeout_passed']
+        && isset($_REQUEST[$opt]))
+        || (isset($GLOBALS['cfg'][$section][$opt])
+        && $GLOBALS['cfg'][$section][$opt]))
     ) {
         return ' checked="checked"';
     }
@@ -137,36 +132,30 @@ function PMA_pluginGetDefault($section, $opt)
     if (isset($_GET[$opt])) {
         // If the form is being repopulated using $_GET data, that is priority
         return htmlspecialchars($_GET[$opt]);
-    }
-
-    if (isset($GLOBALS['timeout_passed'])
+    } elseif (isset($GLOBALS['timeout_passed'])
         && $GLOBALS['timeout_passed']
-        && isset($_REQUEST[$opt])
-    ) {
+        && isset($_REQUEST[$opt])) {
         return htmlspecialchars($_REQUEST[$opt]);
-    }
-
-    if (!isset($GLOBALS['cfg'][$section][$opt])) {
-        return '';
-    }
-
-    $matches = array();
-    /* Possibly replace localised texts */
-    if (!preg_match_all(
-        '/(str[A-Z][A-Za-z0-9]*)/',
-        $GLOBALS['cfg'][$section][$opt],
-        $matches
-    )) {
-        return htmlspecialchars($GLOBALS['cfg'][$section][$opt]);
-    }
-
-    $val = $GLOBALS['cfg'][$section][$opt];
-    foreach ($matches[0] as $match) {
-        if (isset($GLOBALS[$match])) {
-            $val = str_replace($match, $GLOBALS[$match], $val);
+    } elseif (isset($GLOBALS['cfg'][$section][$opt])) {
+        $matches = array();
+        /* Possibly replace localised texts */
+        if (preg_match_all(
+            '/(str[A-Z][A-Za-z0-9]*)/',
+            $GLOBALS['cfg'][$section][$opt],
+            $matches
+        )) {
+            $val = $GLOBALS['cfg'][$section][$opt];
+            foreach ($matches[0] as $match) {
+                if (isset($GLOBALS[$match])) {
+                    $val = str_replace($match, $GLOBALS[$match], $val);
+                }
+            }
+            return htmlspecialchars($val);
+        } else {
+            return htmlspecialchars($GLOBALS['cfg'][$section][$opt]);
         }
     }
-    return htmlspecialchars($val);
+    return '';
 }
 
 /**
@@ -189,12 +178,7 @@ function PMA_pluginGetChoice($section, $name, &$list, $cfgname = null)
     $ret = '<select id="plugins" name="' . $name . '">';
     $default = PMA_pluginGetDefault($section, $cfgname);
     foreach ($list as $plugin) {
-        $plugin_name = /*overload*/mb_strtolower(
-            /*overload*/mb_substr(
-                get_class($plugin),
-                /*overload*/mb_strlen($section)
-            )
-        );
+        $plugin_name = strtolower(substr(get_class($plugin), strlen($section)));
         $ret .= '<option';
          // If the form is being repopulated using $_GET data, that is priority
         if (isset($_GET[$name])
@@ -218,12 +202,7 @@ function PMA_pluginGetChoice($section, $name, &$list, $cfgname = null)
 
     // Whether each plugin has to be saved as a file
     foreach ($list as $plugin) {
-        $plugin_name = /*overload*/mb_strtolower(
-            /*overload*/mb_substr(
-                get_class($plugin),
-                /*overload*/mb_strlen($section)
-            )
-        );
+        $plugin_name = strtolower(substr(get_class($plugin), strlen($section)));
         $ret .= '<input type="hidden" id="force_file_' . $plugin_name
             . '" value="';
         $properties = $plugin->getProperties();
@@ -234,7 +213,7 @@ function PMA_pluginGetChoice($section, $name, &$list, $cfgname = null)
         } else {
             $ret .= 'false';
         }
-        $ret .= '" />' . "\n";
+        $ret .= '" />'. "\n";
     }
 
     return $ret;
@@ -261,7 +240,7 @@ function PMA_pluginGetOneOption(
 
     if (! $is_subgroup) {
         // for subgroup headers
-        if (/*overload*/mb_strpos(get_class($propertyGroup), "PropertyItem")) {
+        if (strpos(get_class($propertyGroup), "PropertyItem")) {
             $properties = array($propertyGroup);
         } else {
             // for main groups
@@ -287,14 +266,12 @@ function PMA_pluginGetOneOption(
     }
 
     if (isset($properties)) {
-        /** @var OptionsPropertySubgroup $propertyItem */
         foreach ($properties as $propertyItem) {
             $property_class = get_class($propertyItem);
             // if the property is a subgroup, we deal with it recursively
-            if (/*overload*/mb_strpos($property_class, "Subgroup")) {
+            if (strpos($property_class, "Subgroup")) {
                 // for subgroups
                 // each subgroup can have a header, which may also be a form element
-                /** @var OptionsPropertyItem $subgroup_header */
                 $subgroup_header = $propertyItem->getSubgroupHeader();
                 if (isset($subgroup_header)) {
                     $ret .= PMA_pluginGetOneOption(
@@ -317,13 +294,116 @@ function PMA_pluginGetOneOption(
                     $propertyItem,
                     true
                 );
-                continue;
-            }
+            } else {
+                // single property item
+                switch ($property_class) {
+                case "BoolPropertyItem":
+                    $ret .= '<li>' . "\n";
+                    $ret .= '<input type="checkbox" name="' . $plugin_name . '_'
+                        . $propertyItem->getName() . '"'
+                        . ' value="something" id="checkbox_' . $plugin_name . '_'
+                        . $propertyItem->getName() . '"'
+                        . ' '
+                        . PMA_pluginCheckboxCheck(
+                            $section,
+                            $plugin_name . '_' . $propertyItem->getName()
+                        );
 
-            // single property item
-            $ret .= PMA_getHtmlForProperty(
-                $section, $plugin_name, $propertyItem
-            );
+                    if ($propertyItem->getForce() != null) {
+                        // Same code is also few lines lower, update both if needed
+                        $ret .= ' onclick="if (!this.checked &amp;&amp; '
+                            . '(!document.getElementById(\'checkbox_' . $plugin_name
+                            . '_' . $propertyItem->getForce() . '\') '
+                            . '|| !document.getElementById(\'checkbox_'
+                            . $plugin_name . '_' . $propertyItem->getForce()
+                            . '\').checked)) '
+                            . 'return false; else return true;"';
+                    }
+                    $ret .= ' />';
+                    $ret .= '<label for="checkbox_' . $plugin_name . '_'
+                        . $propertyItem->getName() . '">'
+                        . PMA_getString($propertyItem->getText()) . '</label>';
+                    break;
+                case "DocPropertyItem":
+                    echo "DocPropertyItem";
+                    break;
+                case "HiddenPropertyItem":
+                    $ret .= '<li><input type="hidden" name="' . $plugin_name . '_'
+                        . $propertyItem->getName() . '"'
+                        . ' value="' . PMA_pluginGetDefault(
+                            $section,
+                            $plugin_name . '_' . $propertyItem->getName()
+                        )
+                        . '"' . ' /></li>';
+                    break;
+                case "MessageOnlyPropertyItem":
+                    $ret .= '<li>' . "\n";
+                    $ret .= '<p>' . PMA_getString($propertyItem->getText()) . '</p>';
+                    break;
+                case "RadioPropertyItem":
+                    $default = PMA_pluginGetDefault(
+                        $section,
+                        $plugin_name . '_' . $propertyItem->getName()
+                    );
+                    foreach ($propertyItem->getValues() as $key => $val) {
+                        $ret .= '<li><input type="radio" name="' . $plugin_name
+                            . '_' . $propertyItem->getName() . '" value="' . $key
+                            . '" id="radio_' . $plugin_name . '_'
+                            . $propertyItem->getName() . '_' . $key . '"';
+                        if ($key == $default) {
+                            $ret .= ' checked="checked"';
+                        }
+                        $ret .= ' />' . '<label for="radio_' . $plugin_name . '_'
+                            . $propertyItem->getName() . '_' . $key . '">'
+                            . PMA_getString($val) . '</label></li>';
+                    }
+                    break;
+                case "SelectPropertyItem":
+                    $ret .= '<li>' . "\n";
+                    $ret .= '<label for="select_' . $plugin_name . '_'
+                        . $propertyItem->getName() . '" class="desc">'
+                        . PMA_getString($propertyItem->getText()) . '</label>';
+                    $ret .= '<select name="' . $plugin_name . '_'
+                        . $propertyItem->getName() . '"'
+                        . ' id="select_' . $plugin_name . '_'
+                        . $propertyItem->getName() . '">';
+                    $default = PMA_pluginGetDefault(
+                        $section,
+                        $plugin_name . '_' . $propertyItem->getName()
+                    );
+                    foreach ($propertyItem->getValues() as $key => $val) {
+                        $ret .= '<option value="' . $key . '"';
+                        if ($key == $default) {
+                            $ret .= ' selected="selected"';
+                        }
+                        $ret .= '>' . PMA_getString($val) . '</option>';
+                    }
+                    $ret .= '</select>';
+                    break;
+                case "TextPropertyItem":
+                    $ret .= '<li>' . "\n";
+                    $ret .= '<label for="text_' . $plugin_name . '_'
+                        . $propertyItem->getName() . '" class="desc">'
+                        . PMA_getString($propertyItem->getText()) . '</label>';
+                    $ret .= '<input type="text" name="' . $plugin_name . '_'
+                        . $propertyItem->getName() . '"'
+                        . ' value="' . PMA_pluginGetDefault(
+                            $section,
+                            $plugin_name . '_' . $propertyItem->getName()
+                        ) . '"'
+                        . ' id="text_' . $plugin_name . '_'
+                        . $propertyItem->getName() . '"'
+                        . ($propertyItem->getSize() != null
+                            ? ' size="' . $propertyItem->getSize() . '"'
+                            : '')
+                        . ($propertyItem->getLen() != null
+                            ? ' maxlength="' . $propertyItem->getLen() . '"'
+                            : '')
+                        . ' />';
+                    break;
+                default:;
+                }
+            }
         }
     }
 
@@ -342,6 +422,7 @@ function PMA_pluginGetOneOption(
         if ($doc != null) {
             if (count($doc) == 3) {
                 $ret .= PMA_Util::showMySQLDocu(
+                    $doc[0],
                     $doc[1],
                     false,
                     $doc[2]
@@ -350,6 +431,7 @@ function PMA_pluginGetOneOption(
                 $ret .= PMA_Util::showDocu('faq', $doc[0]);
             } else {
                 $ret .= PMA_Util::showMySQLDocu(
+                    $doc[0],
                     $doc[1]
                 );
             }
@@ -371,133 +453,6 @@ function PMA_pluginGetOneOption(
 }
 
 /**
- * Get HTML for properties items
- *
- * @param string              $section      name of config section in
- *                                          $GLOBALS['cfg'][$section] for plugin
- * @param string              $plugin_name  unique plugin name
- * @param OptionsPropertyItem $propertyItem Property item
- *
- * @return string
- */
-function PMA_getHtmlForProperty(
-    $section, $plugin_name, $propertyItem
-) {
-    $ret = null;
-    $property_class = get_class($propertyItem);
-    switch ($property_class) {
-    case "BoolPropertyItem":
-        $ret .= '<li>' . "\n";
-        $ret .= '<input type="checkbox" name="' . $plugin_name . '_'
-            . $propertyItem->getName() . '"'
-            . ' value="something" id="checkbox_' . $plugin_name . '_'
-            . $propertyItem->getName() . '"'
-            . ' '
-            . PMA_pluginCheckboxCheck(
-                $section,
-                $plugin_name . '_' . $propertyItem->getName()
-            );
-
-        if ($propertyItem->getForce() != null) {
-            // Same code is also few lines lower, update both if needed
-            $ret .= ' onclick="if (!this.checked &amp;&amp; '
-                . '(!document.getElementById(\'checkbox_' . $plugin_name
-                . '_' . $propertyItem->getForce() . '\') '
-                . '|| !document.getElementById(\'checkbox_'
-                . $plugin_name . '_' . $propertyItem->getForce()
-                . '\').checked)) '
-                . 'return false; else return true;"';
-        }
-        $ret .= ' />';
-        $ret .= '<label for="checkbox_' . $plugin_name . '_'
-            . $propertyItem->getName() . '">'
-            . PMA_getString($propertyItem->getText()) . '</label>';
-        break;
-    case "DocPropertyItem":
-        echo "DocPropertyItem";
-        break;
-    case "HiddenPropertyItem":
-        $ret .= '<li><input type="hidden" name="' . $plugin_name . '_'
-            . $propertyItem->getName() . '"'
-            . ' value="' . PMA_pluginGetDefault(
-                $section,
-                $plugin_name . '_' . $propertyItem->getName()
-            )
-            . '"' . ' /></li>';
-        break;
-    case "MessageOnlyPropertyItem":
-        $ret .= '<li>' . "\n";
-        $ret .= '<p>' . PMA_getString($propertyItem->getText()) . '</p>';
-        break;
-    case "RadioPropertyItem":
-        $default = PMA_pluginGetDefault(
-            $section,
-            $plugin_name . '_' . $propertyItem->getName()
-        );
-        foreach ($propertyItem->getValues() as $key => $val) {
-            $ret .= '<li><input type="radio" name="' . $plugin_name
-                . '_' . $propertyItem->getName() . '" value="' . $key
-                . '" id="radio_' . $plugin_name . '_'
-                . $propertyItem->getName() . '_' . $key . '"';
-            if ($key == $default) {
-                $ret .= ' checked="checked"';
-            }
-            $ret .= ' />' . '<label for="radio_' . $plugin_name . '_'
-                . $propertyItem->getName() . '_' . $key . '">'
-                . PMA_getString($val) . '</label></li>';
-        }
-        break;
-    case "SelectPropertyItem":
-        $ret .= '<li>' . "\n";
-        $ret .= '<label for="select_' . $plugin_name . '_'
-            . $propertyItem->getName() . '" class="desc">'
-            . PMA_getString($propertyItem->getText()) . '</label>';
-        $ret .= '<select name="' . $plugin_name . '_'
-            . $propertyItem->getName() . '"'
-            . ' id="select_' . $plugin_name . '_'
-            . $propertyItem->getName() . '">';
-        $default = PMA_pluginGetDefault(
-            $section,
-            $plugin_name . '_' . $propertyItem->getName()
-        );
-        foreach ($propertyItem->getValues() as $key => $val) {
-            $ret .= '<option value="' . $key . '"';
-            if ($key == $default) {
-                $ret .= ' selected="selected"';
-            }
-            $ret .= '>' . PMA_getString($val) . '</option>';
-        }
-        $ret .= '</select>';
-        break;
-    case "TextPropertyItem":
-    case "NumberPropertyItem":
-        $ret .= '<li>' . "\n";
-        $ret .= '<label for="text_' . $plugin_name . '_'
-            . $propertyItem->getName() . '" class="desc">'
-            . PMA_getString($propertyItem->getText()) . '</label>';
-        $ret .= '<input type="text" name="' . $plugin_name . '_'
-            . $propertyItem->getName() . '"'
-            . ' value="' . PMA_pluginGetDefault(
-                $section,
-                $plugin_name . '_' . $propertyItem->getName()
-            ) . '"'
-            . ' id="text_' . $plugin_name . '_'
-            . $propertyItem->getName() . '"'
-            . ($propertyItem->getSize() != null
-                ? ' size="' . $propertyItem->getSize() . '"'
-                : '')
-            . ($propertyItem->getLen() != null
-                ? ' maxlength="' . $propertyItem->getLen() . '"'
-                : '')
-            . ' />';
-        break;
-    default:
-        break;
-    }
-    return $ret;
-}
-
-/**
  * Returns html div with editable options for plugin
  *
  * @param string $section name of config section in $GLOBALS['cfg'][$section]
@@ -508,6 +463,7 @@ function PMA_getHtmlForProperty(
 function PMA_pluginGetOptions($section, &$list)
 {
     $ret = '';
+    $default = PMA_pluginGetDefault('Export', 'format');
     // Options for plugins that support them
     foreach ($list as $plugin) {
         $properties = $plugin->getProperties();
@@ -516,12 +472,7 @@ function PMA_pluginGetOptions($section, &$list)
             $options = $properties->getOptions();
         }
 
-        $plugin_name = /*overload*/mb_strtolower(
-            /*overload*/mb_substr(
-                get_class($plugin),
-                /*overload*/mb_strlen($section)
-            )
-        );
+        $plugin_name = strtolower(substr(get_class($plugin), strlen($section)));
         $ret .= '<div id="' . $plugin_name
             . '_options" class="format_specific_options">';
         $ret .= '<h3>' . PMA_getString($text) . '</h3>';

@@ -18,43 +18,38 @@ PMA_Util::checkParameters(array('db'));
 
 $is_show_stats = $cfg['ShowStats'];
 
-$db_is_system_schema = $GLOBALS['dbi']->isSystemSchema($db);
-if ($db_is_system_schema) {
+$db_is_information_schema = PMA_is_system_schema($db);
+if ($db_is_information_schema) {
     $is_show_stats = false;
 }
 
 /**
  * Defines the urls to return to in case of error in a sql statement
  */
-$err_url_0 = 'index.php' . PMA_URL_getCommon();
-$err_url   = $cfg['DefaultTabDatabase']
-    . PMA_URL_getCommon(array('db' => $db));
+$err_url_0 = 'index.php?' . PMA_generate_common_url();
+$err_url   = $cfg['DefaultTabDatabase'] . '?' . PMA_generate_common_url($db);
 
-/** @var PMA_String $pmaString */
-$pmaString = $GLOBALS['PMA_String'];
 
 /**
  * Ensures the database exists (else move to the "parent" script) and displays
  * headers
  */
 if (! isset($is_db) || ! $is_db) {
-    if (/*overload*/mb_strlen($db)) {
-        $is_db = $GLOBALS['dbi']->selectDb($db);
+    if (strlen($db)) {
+        $is_db = PMA_DBI_select_db($db);
         // This "Command out of sync" 2014 error may happen, for example
         // after calling a MySQL procedure; at this point we can't select
         // the db but it's not necessarily wrong
-        if ($GLOBALS['dbi']->getError() && $GLOBALS['errno'] == 2014) {
+        if (PMA_DBI_getError() && $GLOBALS['errno'] == 2014) {
             $is_db = true;
             unset($GLOBALS['errno']);
         }
-    } else {
-        $is_db = false;
     }
     // Not a valid db name -> back to the welcome page
-    $uri = $cfg['PmaAbsoluteUri'] . 'index.php'
-        . PMA_URL_getCommon(array(), 'text')
+    $uri = $cfg['PmaAbsoluteUri'] . 'index.php?'
+        . PMA_generate_common_url('', '', '&')
         . (isset($message) ? '&message=' . urlencode($message) : '') . '&reload=1';
-    if (!/*overload*/mb_strlen($db) || ! $is_db) {
+    if (! strlen($db) || ! $is_db) {
         $response = PMA_Response::getInstance();
         if ($response->isAjax()) {
             $response->isSuccess(false);
@@ -80,7 +75,7 @@ if (isset($_REQUEST['submitcollation'])
     $sql_query        = 'ALTER DATABASE '
         . PMA_Util::backquote($db)
         . ' DEFAULT' . PMA_generateCharsetQueryPart($_REQUEST['db_collation']);
-    $result           = $GLOBALS['dbi']->query($sql_query);
+    $result           = PMA_DBI_query($sql_query);
     $message          = PMA_Message::success();
     unset($db_charset);
 
@@ -100,6 +95,6 @@ if (isset($_REQUEST['submitcollation'])
 /**
  * Set parameters for links
  */
-$url_query = PMA_URL_getCommon(array('db' => $db));
+$url_query = PMA_generate_common_url($db);
 
 ?>

@@ -9,14 +9,12 @@ if (! defined('PHPMYADMIN')) {
     exit;
 }
 
-require_once 'libraries/navigation/Nodes/Node_DatabaseChild.class.php';
-
 /**
  * Represents a event node in the navigation tree
  *
  * @package PhpMyAdmin-Navigation
  */
-class Node_Event extends Node_DatabaseChild
+class Node_Event extends Node
 {
     /**
      * Initialises the class
@@ -35,22 +33,33 @@ class Node_Event extends Node_DatabaseChild
         $this->links = array(
             'text' => 'db_events.php?server=' . $GLOBALS['server']
                     . '&amp;db=%2$s&amp;item_name=%1$s&amp;edit_item=1'
-                    . '&amp;token=' . $_SESSION[' PMA_token '],
+                    . '&amp;token=' . $GLOBALS['token'],
             'icon' => 'db_events.php?server=' . $GLOBALS['server']
                     . '&amp;db=%2$s&amp;item_name=%1$s&amp;export_item=1'
-                    . '&amp;token=' . $_SESSION[' PMA_token ']
+                    . '&amp;token=' . $GLOBALS['token']
         );
         $this->classes = 'event';
     }
 
     /**
-     * Returns the type of the item represented by the node.
+     * Returns the comment associated with node
+     * This method should be overridden by specific type of nodes
      *
-     * @return string type of the item
+     * @return string
      */
-    protected function getItemType()
+    public function getComment()
     {
-        return 'event';
+        $db    = PMA_Util::sqlAddSlashes(
+            $this->realParent()->real_name
+        );
+        $event = PMA_Util::sqlAddSlashes(
+            $this->real_name
+        );
+        $query  = "SELECT `EVENT_COMMENT` ";
+        $query .= "FROM `INFORMATION_SCHEMA`.`EVENTS` ";
+        $query .= "WHERE `EVENT_SCHEMA`='$db' ";
+        $query .= "AND `EVENT_NAME`='$event' ";
+        return PMA_DBI_fetch_value($query);
     }
 }
 

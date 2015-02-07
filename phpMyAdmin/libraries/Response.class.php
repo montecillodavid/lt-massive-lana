@@ -25,14 +25,14 @@ class PMA_Response
      *
      * @access private
      * @static
-     * @var PMA_Response
+     * @var object
      */
     private static $_instance;
     /**
      * PMA_Header instance
      *
      * @access private
-     * @var PMA_Header
+     * @var object
      */
     private $_header;
     /**
@@ -54,7 +54,7 @@ class PMA_Response
      * PMA_Footer instance
      *
      * @access private
-     * @var PMA_Footer
+     * @var object
      */
     private $_footer;
     /**
@@ -75,7 +75,7 @@ class PMA_Response
      */
     private $_isAjaxPage;
     /**
-     * Whether there were any errors during the processing of the request
+     * Whether there were any errors druing the processing of the request
      * Only used for ajax responses
      *
      * @access private
@@ -86,12 +86,14 @@ class PMA_Response
      * Workaround for PHP bug
      *
      * @access private
-     * @var string|bool
+     * @var bool
      */
     private $_CWD;
 
     /**
      * Creates a new class instance
+     *
+     * @return new PMA_Response object
      */
     private function __construct()
     {
@@ -184,7 +186,7 @@ class PMA_Response
     /**
      * Returns a PMA_Header object
      *
-     * @return PMA_Header
+     * @return object
      */
     public function getHeader()
     {
@@ -194,7 +196,7 @@ class PMA_Response
     /**
      * Returns a PMA_Footer object
      *
-     * @return PMA_Footer
+     * @return object
      */
     public function getFooter()
     {
@@ -211,11 +213,7 @@ class PMA_Response
      */
     public function addHTML($content)
     {
-        if (is_array($content)) {
-            foreach ($content as $msg) {
-                $this->addHTML($msg);
-            }
-        } elseif ($content instanceof PMA_Message) {
+        if ($content instanceof PMA_Message) {
             $this->_HTML .= $content->getDisplay();
         } else {
             $this->_HTML .= $content;
@@ -256,7 +254,7 @@ class PMA_Response
     private function _getDisplay()
     {
         // The header may contain nothing at all,
-        // if its content was already rendered
+        // if it's content was already rendered
         // and, in this case, the header will be
         // in the content part of the request
         $retval  = $this->_header->getDisplay();
@@ -296,50 +294,33 @@ class PMA_Response
             unset($this->_JSON['message']);
         }
 
-        if ($this->_isSuccess) {
-            // Note: the old judge sentence is:
-            // $this->_isAjaxPage && $this->_isSuccess
-            // Removal the first, because console need log all queries, if caused any
-            // bug, contact Edward Cheng
+        if ($this->_isAjaxPage && $this->_isSuccess) {
             $this->addJSON('_title', $this->getHeader()->getTitleTag());
 
-            if (isset($GLOBALS['dbi'])) {
-                $menuHash = $this->getHeader()->getMenu()->getHash();
-                $this->addJSON('_menuHash', $menuHash);
-                $hashes = array();
-                if (isset($_REQUEST['menuHashes'])) {
-                    $hashes = explode('-', $_REQUEST['menuHashes']);
-                }
-                if (! in_array($menuHash, $hashes)) {
-                    $this->addJSON('_menu', $this->getHeader()->getMenu()->getDisplay());
-                }
+            $menuHash = $this->getHeader()->getMenu()->getHash();
+            $this->addJSON('_menuHash', $menuHash);
+            $hashes = array();
+            if (isset($_REQUEST['menuHashes'])) {
+                $hashes = explode('-', $_REQUEST['menuHashes']);
+            }
+            if (! in_array($menuHash, $hashes)) {
+                $this->addJSON('_menu', $this->getHeader()->getMenu()->getDisplay());
             }
 
             $this->addJSON('_scripts', $this->getHeader()->getScripts()->getFiles());
             $this->addJSON('_selflink', $this->getFooter()->getSelfUrl('unencoded'));
             $this->addJSON('_displayMessage', $this->getHeader()->getMessage());
-
-            $debug = $this->_footer->getDebugMessage();
-            if (/*overload*/mb_strlen($debug)) {
-                $this->addJSON('_debug', $debug);
-            }
-
             $errors = $this->_footer->getErrorMessages();
-            if (/*overload*/mb_strlen($errors)) {
+            if (strlen($errors)) {
                 $this->addJSON('_errors', $errors);
             }
-            $promptPhpErrors = $GLOBALS['error_handler']->hasErrorsForPrompt();
-            $this->addJSON('_promptPhpErrors', $promptPhpErrors);
-
             if (empty($GLOBALS['error_message'])) {
                 // set current db, table and sql query in the querywindow
-                // (this is for the bottom console)
                 $query = '';
-                $maxChars = $GLOBALS['cfg']['MaxCharactersInDisplayedSQL'];
                 if (isset($GLOBALS['sql_query'])
-                    && /*overload*/mb_strlen($GLOBALS['sql_query']) < $maxChars
+                    && strlen($GLOBALS['sql_query']) < $GLOBALS['cfg']['MaxCharactersInDisplayedSQL']
                 ) {
-                    $query = $GLOBALS['sql_query'];
+                    $query = PMA_escapeJsString($GLOBALS['sql_query']);
                 }
                 $this->addJSON(
                     '_reloadQuerywindow',

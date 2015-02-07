@@ -46,16 +46,14 @@ class ImportLdi extends AbstractImportCsv
         if ($GLOBALS['cfg']['Import']['ldi_local_option'] == 'auto') {
             $GLOBALS['cfg']['Import']['ldi_local_option'] = false;
 
-            $result = $GLOBALS['dbi']->tryQuery(
-                'SHOW VARIABLES LIKE \'local\\_infile\';'
-            );
-            if ($result != false && $GLOBALS['dbi']->numRows($result) > 0) {
-                $tmp = $GLOBALS['dbi']->fetchRow($result);
+            $result = PMA_DBI_try_query('SHOW VARIABLES LIKE \'local\\_infile\';');
+            if ($result != false && PMA_DBI_num_rows($result) > 0) {
+                $tmp = PMA_DBI_fetch_row($result);
                 if ($tmp[1] == 'ON') {
                     $GLOBALS['cfg']['Import']['ldi_local_option'] = true;
                 }
             }
-            $GLOBALS['dbi']->freeResult($result);
+            PMA_DBI_free_result($result);
             unset($result);
         }
 
@@ -80,25 +78,38 @@ class ImportLdi extends AbstractImportCsv
     }
 
     /**
+     * This method is called when any PluginManager to which the observer
+     * is attached calls PluginManager::notify()
+     *
+     * @param SplSubject $subject The PluginManager notifying the observer
+     *                            of an update.
+     *
+     * @return void
+     */
+    public function update (SplSubject $subject)
+    {
+    }
+
+    /**
      * Handles the whole import logic
      *
      * @return void
      */
     public function doImport()
     {
-        global $finished, $import_file, $compression, $charset_conversion, $table;
-        global $ldi_local_option, $ldi_replace, $ldi_ignore, $ldi_terminated,
-            $ldi_enclosed, $ldi_escaped, $ldi_new_line, $skip_queries, $ldi_columns;
+        global $finished, $error, $import_file, $compression, $charset_conversion, $table;
+        global $ldi_local_option, $ldi_replace, $ldi_ignore, $ldi_terminated, $ldi_enclosed,
+            $ldi_escaped, $ldi_new_line, $skip_queries, $ldi_columns;
 
         if ($import_file == 'none'
             || $compression != 'none'
             || $charset_conversion
         ) {
             // We handle only some kind of data!
-            $GLOBALS['message'] = PMA_Message::error(
+            $message = PMA_Message::error(
                 __('This plugin does not support compressed imports!')
             );
-            $GLOBALS['error'] = true;
+            $error = true;
             return;
         }
 

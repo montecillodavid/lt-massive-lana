@@ -86,6 +86,19 @@ class ExportOds extends ExportPlugin
     }
 
     /**
+     * This method is called when any PluginManager to which the observer
+     * is attached calls PluginManager::notify()
+     *
+     * @param SplSubject $subject The PluginManager notifying the observer
+     *                            of an update.
+     *
+     * @return void
+     */
+    public function update (SplSubject $subject)
+    {
+    }
+
+    /**
      * Outputs export header
      *
      * @return bool Whether it succeeded
@@ -97,7 +110,7 @@ class ExportOds extends ExportPlugin
                 . $GLOBALS['OpenDocumentNS'] . 'office:version="1.0">'
             . '<office:automatic-styles>'
                 . '<number:date-style style:name="N37"'
-                    . ' number:automatic-order="true">'
+                    .' number:automatic-order="true">'
                 . '<number:month number:style="long"/>'
                 . '<number:text>/</number:text>'
                 . '<number:day number:style="long"/>'
@@ -164,12 +177,11 @@ class ExportOds extends ExportPlugin
     /**
      * Outputs database header
      *
-     * @param string $db       Database name
-     * @param string $db_alias Aliases of db
+     * @param string $db Database name
      *
      * @return bool Whether it succeeded
      */
-    public function exportDBHeader ($db, $db_alias = '')
+    public function exportDBHeader ($db)
     {
         return true;
     }
@@ -189,12 +201,11 @@ class ExportOds extends ExportPlugin
     /**
      * Outputs CREATE DATABASE statement
      *
-     * @param string $db       Database name
-     * @param string $db_alias Aliases of db
+     * @param string $db Database name
      *
      * @return bool Whether it succeeded
      */
-    public function exportDBCreate($db, $db_alias = '')
+    public function exportDBCreate($db)
     {
         return true;
     }
@@ -207,45 +218,34 @@ class ExportOds extends ExportPlugin
      * @param string $crlf      the end of line sequence
      * @param string $error_url the url to go back in case of error
      * @param string $sql_query SQL query for obtaining data
-     * @param array  $aliases   Aliases of db/table/columns
      *
      * @return bool Whether it succeeded
      */
-    public function exportData(
-        $db, $table, $crlf, $error_url, $sql_query, $aliases = array()
-    ) {
+    public function exportData($db, $table, $crlf, $error_url, $sql_query)
+    {
         global $what;
 
-        $db_alias = $db;
-        $table_alias = $table;
-        $this->initAlias($aliases, $db_alias, $table_alias);
         // Gets the data from the database
-        $result = $GLOBALS['dbi']->query(
-            $sql_query, null, PMA_DatabaseInterface::QUERY_UNBUFFERED
-        );
-        $fields_cnt = $GLOBALS['dbi']->numFields($result);
-        $fields_meta = $GLOBALS['dbi']->getFieldsMeta($result);
+        $result = PMA_DBI_query($sql_query, null, PMA_DBI_QUERY_UNBUFFERED);
+        $fields_cnt = PMA_DBI_num_fields($result);
+        $fields_meta = PMA_DBI_get_fields_meta($result);
         $field_flags = array();
         for ($j = 0; $j < $fields_cnt; $j++) {
-            $field_flags[$j] = $GLOBALS['dbi']->fieldFlags($result, $j);
+            $field_flags[$j] = PMA_DBI_field_flags($result, $j);
         }
 
         $GLOBALS['ods_buffer'] .=
-            '<table:table table:name="' . htmlspecialchars($table_alias) . '">';
+            '<table:table table:name="' . htmlspecialchars($table) . '">';
 
         // If required, get fields name at the first line
         if (isset($GLOBALS[$what . '_columns'])) {
             $GLOBALS['ods_buffer'] .= '<table:table-row>';
             for ($i = 0; $i < $fields_cnt; $i++) {
-                $col_as = $GLOBALS['dbi']->fieldName($result, $i);
-                if (!empty($aliases[$db]['tables'][$table]['columns'][$col_as])) {
-                    $col_as = $aliases[$db]['tables'][$table]['columns'][$col_as];
-                }
                 $GLOBALS['ods_buffer'] .=
                     '<table:table-cell office:value-type="string">'
                     . '<text:p>'
                     . htmlspecialchars(
-                        stripslashes($col_as)
+                        stripslashes(PMA_DBI_field_name($result, $i))
                     )
                     . '</text:p>'
                     . '</table:table-cell>';
@@ -254,7 +254,7 @@ class ExportOds extends ExportPlugin
         } // end if
 
         // Format the data
-        while ($row = $GLOBALS['dbi']->fetchRow($result)) {
+        while ($row = PMA_DBI_fetch_row($result)) {
             $GLOBALS['ods_buffer'] .= '<table:table-row>';
             for ($j = 0; $j < $fields_cnt; $j++) {
                 if (! isset($row[$j]) || is_null($row[$j])) {
@@ -324,7 +324,7 @@ class ExportOds extends ExportPlugin
             } // end for
             $GLOBALS['ods_buffer'] .= '</table:table-row>';
         } // end while
-        $GLOBALS['dbi']->freeResult($result);
+        PMA_DBI_free_result($result);
 
         $GLOBALS['ods_buffer'] .= '</table:table>';
 

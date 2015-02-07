@@ -25,7 +25,7 @@ function PMA_printGitRevision()
     // load revision data from repo
     $GLOBALS['PMA_Config']->checkGitRevision();
 
-    // if using a remote commit fast-forwarded, link to GitHub
+    // if using a remote commit fast-forwarded, link to Github
     $commit_hash = substr(
         $GLOBALS['PMA_Config']->get('PMA_VERSION_GIT_COMMITHASH'),
         0,
@@ -61,7 +61,7 @@ function PMA_printGitRevision()
     $committer = $GLOBALS['PMA_Config']->get('PMA_VERSION_GIT_COMMITTER');
     $author = $GLOBALS['PMA_Config']->get('PMA_VERSION_GIT_AUTHOR');
     PMA_printListItem(
-        __('Git revision:') . ' '
+        __('Git revision') . ': '
         . $branch . ',<br /> '
         . sprintf(
             __('committed on %1$s by %2$s'),

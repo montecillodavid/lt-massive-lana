@@ -13,7 +13,6 @@ if (! defined('PHPMYADMIN')) {
  * Include all other files that are common
  * to routines, triggers and events.
  */
-require_once './libraries/rte/rte_general.lib.php';
 require_once './libraries/rte/rte_words.lib.php';
 require_once './libraries/rte/rte_export.lib.php';
 require_once './libraries/rte/rte_list.lib.php';
@@ -23,7 +22,7 @@ if ($GLOBALS['is_ajax_request'] != true) {
     /**
      * Displays the header and tabs
      */
-    if (! empty($table) && in_array($table, $GLOBALS['dbi']->getTables($db))) {
+    if (! empty($table) && in_array($table, PMA_DBI_get_tables($db))) {
         include_once './libraries/tbl_common.inc.php';
     } else {
         $table = '';
@@ -36,14 +35,10 @@ if ($GLOBALS['is_ajax_request'] != true) {
      * to manually select the required database and
      * create the missing $url_query variable
      */
-    if (/*overload*/mb_strlen($db)) {
-        $GLOBALS['dbi']->selectDb($db);
+    if (strlen($db)) {
+        PMA_DBI_select_db($db);
         if (! isset($url_query)) {
-            $url_query = PMA_URL_getCommon(
-                array(
-                    'db' => $db, 'table' => $table
-                )
-            );
+            $url_query = PMA_generate_common_url($db, $table);
         }
     }
 }
@@ -52,6 +47,13 @@ if ($GLOBALS['is_ajax_request'] != true) {
  * Generate the conditional classes that will
  * be used to attach jQuery events to links
  */
+$ajax_class = array(
+    'add'    => '',
+    'edit'   => '',
+    'exec'   => '',
+    'drop'   => '',
+    'export' => ''
+);
 $ajax_class = array(
     'add'    => 'class="ajax add_anchor"',
     'edit'   => 'class="ajax edit_anchor"',
@@ -66,7 +68,7 @@ $ajax_class = array(
 $titles = PMA_Util::buildActionTitles();
 
 /**
- * Keep a list of errors that occurred while
+ * Keep a list of errors that occured while
  * processing an 'Add' or 'Edit' operation.
  */
 $errors = array();
@@ -77,11 +79,7 @@ $errors = array();
  */
 switch ($_PMA_RTE) {
 case 'RTN':
-    $type = null;
-    if (isset($_REQUEST['type'])) {
-        $type = $_REQUEST['type'];
-    }
-    PMA_RTN_main($type);
+    PMA_RTN_main();
     break;
 case 'TRI':
     PMA_TRI_main();

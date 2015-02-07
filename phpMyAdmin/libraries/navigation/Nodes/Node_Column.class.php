@@ -29,18 +29,42 @@ class Node_Column extends Node
     public function __construct($name, $type = Node::OBJECT, $is_group = false)
     {
         parent::__construct($name, $type, $is_group);
-        $this->icon  = PMA_Util::getImage('pause.png', __('Column'));
+        $this->icon  = PMA_Util::getImage('pause.png', '');
         $this->links = array(
             'text' => 'tbl_structure.php?server=' . $GLOBALS['server']
                     . '&amp;db=%3$s&amp;table=%2$s&amp;field=%1$s'
                     . '&amp;change_column=1'
-                    . '&amp;token=' . $_SESSION[' PMA_token '],
+                    . '&amp;token=' . $GLOBALS['token'],
             'icon' => 'tbl_structure.php?server=' . $GLOBALS['server']
                     . '&amp;db=%3$s&amp;table=%2$s&amp;field=%1$s'
                     . '&amp;change_column=1'
-                    . '&amp;token=' . $_SESSION[' PMA_token '],
-            'title' => __('Structure')
+                    . '&amp;token=' . $GLOBALS['token']
         );
+    }
+
+    /**
+     * Returns the comment associated with node
+     * This method should be overridden by specific type of nodes
+     *
+     * @return string
+     */
+    public function getComment()
+    {
+        $db     = PMA_Util::sqlAddSlashes(
+            $this->realParent()->realParent()->real_name
+        );
+        $table  = PMA_Util::sqlAddSlashes(
+            $this->realParent()->real_name
+        );
+        $column = PMA_Util::sqlAddSlashes(
+            $this->real_name
+        );
+        $query  = "SELECT `COLUMN_COMMENT` ";
+        $query .= "FROM `INFORMATION_SCHEMA`.`COLUMNS` ";
+        $query .= "WHERE `TABLE_SCHEMA`='$db' ";
+        $query .= "AND `TABLE_NAME`='$table' ";
+        $query .= "AND `COLUMN_NAME`='$column' ";
+        return PMA_DBI_fetch_value($query);
     }
 }
 

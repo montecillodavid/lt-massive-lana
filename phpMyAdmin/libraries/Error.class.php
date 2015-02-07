@@ -6,10 +6,6 @@
  * @package PhpMyAdmin
  */
 
-if (! defined('PHPMYADMIN')) {
-    exit;
-}
-
 /**
  * base class
  */
@@ -28,7 +24,6 @@ class PMA_Error extends PMA_Message
      * @var array
      */
     static public $errortype = array (
-        0                    => 'Internal error',
         E_ERROR              => 'Error',
         E_WARNING            => 'Warning',
         E_PARSE              => 'Parsing Error',
@@ -51,7 +46,6 @@ class PMA_Error extends PMA_Message
      * @var array
      */
     static public $errorlevel = array (
-        0                    => 'error',
         E_ERROR              => 'error',
         E_WARNING            => 'error',
         E_PARSE              => 'error',
@@ -69,14 +63,14 @@ class PMA_Error extends PMA_Message
     );
 
     /**
-     * The file in which the error occurred
+     * The file in which the error occured
      *
      * @var string
      */
     protected $file = '';
 
     /**
-     * The line in which the error occurred
+     * The line in which the error occured
      *
      * @var integer
      */
@@ -125,12 +119,6 @@ class PMA_Error extends PMA_Message
      * @param array $backtrace backtrace
      *
      * @return void
-     *
-     * @todo This function should store only processed backtrace as full
-     *       backtrace requires too much memory (especially with Response
-     *       object included). It could probably store only printable
-     *       representation as created by getBacktraceDisplay or some
-     *       intermediate form.
      */
     public function setBacktrace($backtrace)
     {
@@ -188,19 +176,12 @@ class PMA_Error extends PMA_Message
     }
 
     /**
-     * returns PMA_Error::$_backtrace for first $count frames
-     * pass $count = -1 to get full backtrace.
-     * The same can be done by not passing $count at all.
-     *
-     * @param integer $count Number of stack frames.
+     * returns PMA_Error::$_backtrace
      *
      * @return array PMA_Error::$_backtrace
      */
-    public function getBacktrace($count = -1)
+    public function getBacktrace()
     {
-        if ($count != -1) {
-            return array_slice($this->backtrace, 0, $count);
-        }
         return $this->backtrace;
     }
 
@@ -251,9 +232,7 @@ class PMA_Error extends PMA_Message
      */
     public function getHtmlTitle()
     {
-        return htmlspecialchars(
-            /*overload*/mb_substr($this->getTitle(), 0, 100)
-        );
+        return htmlspecialchars(substr($this->getTitle(), 0, 100));
     }
 
     /**
@@ -269,73 +248,35 @@ class PMA_Error extends PMA_Message
     /**
      * Get HTML backtrace
      *
-     * @return string
+     * @return void
      */
     public function getBacktraceDisplay()
     {
-        return PMA_Error::formatBacktrace(
-            $this->getBacktrace(),
-            "<br />\n",
-            "<br />\n"
-        );
-    }
-
-    /**
-     * return formatted backtrace field
-     *
-     * @param array  $backtrace Backtrace data
-     * @param string $separator Arguments separator to use
-     * @param string $lines     Lines separator to use
-     *
-     * @return string formatted backtrace
-     * @static
-     */
-    static function formatBacktrace($backtrace, $separator, $lines)
-    {
         $retval = '';
 
-        foreach ($backtrace as $step) {
+        foreach ($this->getBacktrace() as $step) {
             if (isset($step['file']) && isset($step['line'])) {
-                $retval .= PMA_Error::relPath($step['file'])
-                    . '#' . $step['line'] . ': ';
+                $retval .= PMA_Error::relPath($step['file']) . '#' . $step['line'] . ': ';
             }
             if (isset($step['class'])) {
                 $retval .= $step['class'] . $step['type'];
             }
-            $retval .= PMA_Error::getFunctionCall($step, $separator);
-            $retval .= $lines;
-        }
-
-        return $retval;
-    }
-
-    /**
-     * Formats function call in a backtrace
-     *
-     * @param array  $step      backtrace step
-     * @param string $separator Arguments separator to use
-     *
-     * @return string
-     * @static
-     */
-    static function getFunctionCall($step, $separator)
-    {
-        $retval = $step['function'] . '(';
-        if (isset($step['args'])) {
-            if (count($step['args']) > 1) {
-                $retval .= $separator;
+            $retval .= $step['function'] . '(';
+            if (isset($step['args']) && (count($step['args']) > 1)) {
+                $retval .= "<br />\n";
                 foreach ($step['args'] as $arg) {
                     $retval .= "\t";
-                    $retval .= PMA_Error::getArg($arg, $step['function']);
-                    $retval .= ',' . $separator;
+                    $retval .= $this->getArg($arg, $step['function']);
+                    $retval .= ',' . "<br />\n";
                 }
-            } elseif (count($step['args']) > 0) {
+            } elseif (isset($step['args']) && (count($step['args']) > 0)) {
                 foreach ($step['args'] as $arg) {
-                    $retval .= PMA_Error::getArg($arg, $step['function']);
+                    $retval .= $this->getArg($arg, $step['function']);
                 }
             }
+            $retval .= ')' . "<br />\n";
         }
-        $retval .= ')';
+
         return $retval;
     }
 
@@ -345,13 +286,12 @@ class PMA_Error extends PMA_Message
      * if $function is one of include/require
      * the $arg is converted to a relative path
      *
-     * @param string $arg      argument to process
-     * @param string $function function name
+     * @param string $arg
+     * @param string $function
      *
      * @return string
-     * @static
      */
-    static function getArg($arg, $function)
+    protected function getArg($arg, $function)
     {
         $retval = '';
         $include_functions = array(
@@ -365,8 +305,8 @@ class PMA_Error extends PMA_Message
             'mysql_pconnect',
             'mysqli_connect',
             'mysqli_real_connect',
-            'connect',
-            '_realConnect'
+            'PMA_DBI_connect',
+            'PMA_DBI_real_connect',
         );
 
         if (in_array($function, $include_functions)) {
@@ -376,8 +316,7 @@ class PMA_Error extends PMA_Message
         ) {
             $retval .= getType($arg) . ' ********';
         } elseif (is_scalar($arg)) {
-            $retval .= getType($arg) . ' '
-                . htmlspecialchars(var_export($arg, true));
+            $retval .= getType($arg) . ' ' . htmlspecialchars($arg);
         } else {
             $retval .= getType($arg);
         }
@@ -425,8 +364,8 @@ class PMA_Error extends PMA_Message
     /**
      * return short relative path to phpMyAdmin basedir
      *
-     * prevent path disclosure in error message,
-     * and make users feel safe to submit error reports
+     * prevent path disclusore in error message,
+     * and make users feel save to submit error reports
      *
      * @param string $dest path to be shorten
      *
@@ -438,31 +377,31 @@ class PMA_Error extends PMA_Message
         $dest = realpath($dest);
 
         if (substr(PHP_OS, 0, 3) == 'WIN') {
-            $separator = '\\';
+            $path_separator = '\\';
         } else {
-            $separator = '/';
+            $path_separator = '/';
         }
 
         $Ahere = explode(
-            $separator,
-            realpath(__DIR__ . $separator . '..')
+            $path_separator,
+            realpath(dirname(__FILE__) . $path_separator . '..')
         );
-        $Adest = explode($separator, $dest);
+        $Adest = explode($path_separator, $dest);
 
         $result = '.';
         // && count ($Adest)>0 && count($Ahere)>0 )
-        while (implode($separator, $Adest) != implode($separator, $Ahere)) {
+        while (implode($path_separator, $Adest) != implode($path_separator, $Ahere)) {
             if (count($Ahere) > count($Adest)) {
                 array_pop($Ahere);
-                $result .= $separator . '..';
+                $result .= $path_separator . '..';
             } else {
                 array_pop($Adest);
             }
         }
-        $path = $result . str_replace(implode($separator, $Adest), '', $dest);
+        $path = $result . str_replace(implode($path_separator, $Adest), '', $dest);
         return str_replace(
-            $separator . $separator,
-            $separator,
+            $path_separator . $path_separator,
+            $path_separator,
             $path
         );
     }

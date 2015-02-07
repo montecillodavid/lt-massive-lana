@@ -18,31 +18,30 @@ class Node_Function_Container extends Node
 {
     /**
      * Initialises the class
+     *
+     * @return Node_Column_Container
      */
     public function __construct()
     {
         parent::__construct(__('Functions'), Node::CONTAINER);
-        $this->icon  = PMA_Util::getImage('b_routines.png', __('Functions'));
+        $this->icon  = PMA_Util::getImage('b_routines.png');
         $this->links = array(
             'text' => 'db_routines.php?server=' . $GLOBALS['server']
-                    . '&amp;db=%1$s&amp;token=' . $_SESSION[' PMA_token ']
-                    . '&amp;type=FUNCTION',
+                    . '&amp;db=%1$s&amp;token=' . $GLOBALS['token'],
             'icon' => 'db_routines.php?server=' . $GLOBALS['server']
-                    . '&amp;db=%1$s&amp;token=' . $_SESSION[' PMA_token ']
-                    . '&amp;type=FUNCTION',
+                    . '&amp;db=%1$s&amp;token=' . $GLOBALS['token'],
         );
         $this->real_name = 'functions';
 
-        $new_label = _pgettext('Create new function', 'New');
-        $new        = PMA_NodeFactory::getInstance('Node', $new_label);
+        $new        = PMA_NodeFactory::getInstance('Node', _pgettext('Create new function', 'New'));
         $new->isNew = true;
-        $new->icon  = PMA_Util::getImage('b_routine_add.png', $new_label);
+        $new->icon  = PMA_Util::getImage('b_routine_add.png', '');
         $new->links = array(
             'text' => 'db_routines.php?server=' . $GLOBALS['server']
-                    . '&amp;db=%2$s&amp;token=' . $_SESSION[' PMA_token ']
+                    . '&amp;db=%2$s&amp;token=' . $GLOBALS['token']
                     . '&add_item=1&amp;item_type=FUNCTION',
             'icon' => 'db_routines.php?server=' . $GLOBALS['server']
-                    . '&amp;db=%2$s&amp;token=' . $_SESSION[' PMA_token ']
+                    . '&amp;db=%2$s&amp;token=' . $GLOBALS['token']
                     . '&add_item=1&amp;item_type=FUNCTION',
         );
         $new->classes = 'new_function italics';

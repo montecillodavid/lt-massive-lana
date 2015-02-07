@@ -24,27 +24,24 @@ class Node_Procedure_Container extends Node
     public function __construct()
     {
         parent::__construct(__('Procedures'), Node::CONTAINER);
-        $this->icon  = PMA_Util::getImage('b_routines.png', __('Procedures'));
+        $this->icon  = PMA_Util::getImage('b_routines.png');
         $this->links = array(
             'text' => 'db_routines.php?server=' . $GLOBALS['server']
-                    . '&amp;db=%1$s&amp;token=' . $_SESSION[' PMA_token ']
-                    . '&amp;type=PROCEDURE',
+                    . '&amp;db=%1$s&amp;token=' . $GLOBALS['token'],
             'icon' => 'db_routines.php?server=' . $GLOBALS['server']
-                    . '&amp;db=%1$s&amp;token=' . $_SESSION[' PMA_token ']
-                    . '&amp;type=PROCEDURE',
+                    . '&amp;db=%1$s&amp;token=' . $GLOBALS['token'],
         );
         $this->real_name = 'procedures';
 
-        $new_label = _pgettext('Create new procedure', 'New');
-        $new        = PMA_NodeFactory::getInstance('Node', $new_label);
+        $new        = PMA_NodeFactory::getInstance('Node', _pgettext('Create new procedure', 'New'));
         $new->isNew = true;
-        $new->icon  = PMA_Util::getImage('b_routine_add.png', $new_label);
+        $new->icon  = PMA_Util::getImage('b_routine_add.png', '');
         $new->links = array(
             'text' => 'db_routines.php?server=' . $GLOBALS['server']
-                    . '&amp;db=%2$s&amp;token=' . $_SESSION[' PMA_token ']
+                    . '&amp;db=%2$s&amp;token=' . $GLOBALS['token']
                     . '&add_item=1',
             'icon' => 'db_routines.php?server=' . $GLOBALS['server']
-                    . '&amp;db=%2$s&amp;token=' . $_SESSION[' PMA_token ']
+                    . '&amp;db=%2$s&amp;token=' . $GLOBALS['token']
                     . '&add_item=1',
         );
         $new->classes = 'new_procedure italics';

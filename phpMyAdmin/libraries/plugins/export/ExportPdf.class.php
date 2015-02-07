@@ -10,14 +10,6 @@ if (! defined('PHPMYADMIN')) {
     exit;
 }
 
-/**
- * Skip the plugin if TCPDF is not available.
- */
-if (! file_exists(TCPDF_INC)) {
-    $GLOBALS['skip_import'] = true;
-    return;
-}
-
 /* Get the export interface */
 require_once 'libraries/plugins/ExportPlugin.class.php';
 /* Get the PMA_ExportPdf class */
@@ -63,9 +55,7 @@ class ExportPdf extends ExportPlugin
      */
     protected function initSpecificVariables()
     {
-        if (! empty($_POST['pdf_report_title'])) {
-            $this->_setPdfReportTitle($_POST['pdf_report_title']);
-        }
+        $this->_setPdfReportTitle("");
         $this->_setPdf(new PMA_ExportPdf('L', 'pt', 'A3'));
     }
 
@@ -123,6 +113,19 @@ class ExportPdf extends ExportPlugin
     }
 
     /**
+     * This method is called when any PluginManager to which the observer
+     * is attached calls PluginManager::notify()
+     *
+     * @param SplSubject $subject The PluginManager notifying the observer
+     *                            of an update.
+     *
+     * @return void
+     */
+    public function update (SplSubject $subject)
+    {
+    }
+
+    /**
      * Outputs export header
      *
      * @return bool Whether it succeeded
@@ -160,12 +163,11 @@ class ExportPdf extends ExportPlugin
     /**
      * Outputs database header
      *
-     * @param string $db       Database name
-     * @param string $db_alias Aliases of db
+     * @param string $db Database name
      *
      * @return bool Whether it succeeded
      */
-    public function exportDBHeader ($db, $db_alias = '')
+    public function exportDBHeader ($db)
     {
         return true;
     }
@@ -185,12 +187,11 @@ class ExportPdf extends ExportPlugin
     /**
      * Outputs CREATE DATABASE statement
      *
-     * @param string $db       Database name
-     * @param string $db_alias Aliases of db
+     * @param string $db Database name
      *
      * @return bool Whether it succeeded
      */
-    public function exportDBCreate($db, $db_alias = '')
+    public function exportDBCreate($db)
     {
         return true;
     }
@@ -202,23 +203,14 @@ class ExportPdf extends ExportPlugin
      * @param string $crlf      the end of line sequence
      * @param string $error_url the url to go back in case of error
      * @param string $sql_query SQL query for obtaining data
-     * @param array  $aliases   Aliases of db/table/columns
      *
      * @return bool Whether it succeeded
      */
-    public function exportData(
-        $db, $table, $crlf, $error_url, $sql_query, $aliases = array()
-    ) {
-        $db_alias = $db;
-        $table_alias = $table;
-        $this->initAlias($aliases, $db_alias, $table_alias);
+    public function exportData($db, $table, $crlf, $error_url, $sql_query)
+    {
         $pdf = $this->_getPdf();
 
-        $attr = array(
-            'currentDb' => $db, 'currentTable' => $table,
-            'dbAlias' => $db_alias, 'tableAlias' => $table_alias,
-            'aliases' => $aliases
-        );
+        $attr = array('currentDb' => $db, 'currentTable' => $table);
         $pdf->setAttributes($attr);
         $pdf->mysqlReport($sql_query);
 
@@ -242,7 +234,7 @@ class ExportPdf extends ExportPlugin
     /**
      * Instantiates the PMA_ExportPdf class
      *
-     * @param PMA_ExportPdf $pdf The instance
+     * @param string $pdf PMA_ExportPdf instance
      *
      * @return void
      */

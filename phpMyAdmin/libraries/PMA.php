@@ -7,10 +7,6 @@
  *
  */
 
-if (! defined('PHPMYADMIN')) {
-    exit;
-}
-
 /**
  * Database listing.
  */
@@ -20,9 +16,6 @@ require_once './libraries/List_Database.class.php';
  * phpMyAdmin main Controller
  *
  * @package PhpMyAdmin
- *
- * @property resource $userlink
- * @property resource $controllink
  */
 class PMA
 {
@@ -96,13 +89,14 @@ class PMA
     /**
      * Accessor to PMA::$databases
      *
-     * @return PMA_List_Database
+     * @return PMA_List_Databases
      */
     public function getDatabaseList()
     {
         if (null === $this->databases) {
             $this->databases = new PMA_List_Database(
-                $this->userlink
+                $this->userlink,
+                $this->controllink
             );
         }
 

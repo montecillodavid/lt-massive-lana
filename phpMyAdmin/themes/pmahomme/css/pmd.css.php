@@ -285,11 +285,10 @@ canvas.pmd * {
     border-left: #999 solid 1px;
     height: 28px;
     z-index: 101;
-    width: 100%;
-    position: fixed;
+    width: 100%
 }
 
-.pmd_header a, .pmd_header span{
+.pmd_header a {
     display: block;
     float: <?php echo $left; ?>;
     margin: 3px 1px 4px;
@@ -374,9 +373,8 @@ a.M_butt:hover {
     background: #FFF;
     border: 1px solid gray;
     width: 350 px;
-    max-height: 500px;
-    overflow:scroll;
-    padding: 30px;
+    height: auto;
+    padding: 30px 170px 30px;
     padding-<?php echo $left; ?>: 30px;
     color: #FFF;
     z-index: 102;
@@ -447,6 +445,7 @@ h2.active {
     padding: 0;
     border-top: 1px solid #d6d6d6;
     background: #FFF;
+    width: 250px;
     overflow: hidden;
     font-size: 1.2em;
     clear: both;

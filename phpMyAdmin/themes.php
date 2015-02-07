@@ -1,7 +1,6 @@
 <?php
 /* vim: set expandtab sw=4 ts=4 sts=4: */
 /**
- * Displays list of themes.
  *
  * @package PhpMyAdmin
  */
@@ -15,7 +14,7 @@ $response->getFooter()->setMinimal();
 $header = $response->getHeader();
 $header->setBodyId('bodythemes');
 $header->setTitle('phpMyAdmin - ' . __('Theme'));
-$header->disableMenuAndConsole();
+$header->disableMenu();
 
 $hash    = '#pma_' . preg_replace('/([0-9]*)\.([0-9]*)\..*/', '\1_\2', PMA_VERSION);
 $url     = PMA_linkURL('http://www.phpmyadmin.net/home_page/themes.php') . $hash;

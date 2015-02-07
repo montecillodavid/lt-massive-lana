@@ -22,7 +22,7 @@ class PMA_Footer
      * PMA_Scripts instance
      *
      * @access private
-     * @var PMA_Scripts
+     * @var object
      */
     private $_scripts;
     /**
@@ -52,6 +52,8 @@ class PMA_Footer
 
     /**
      * Creates a new class instance
+     *
+     * @return new PMA_Footer object
      */
     public function __construct()
     {
@@ -61,35 +63,11 @@ class PMA_Footer
     }
 
     /**
-     * Returns the message for demo server to error messages
-     *
-     * @return string
-     */
-    private function _getDemoMessage()
-    {
-        $message = '<a href="/">' . __('phpMyAdmin Demo Server') . '</a>: ';
-        if (file_exists('./revision-info.php')) {
-            include './revision-info.php';
-            $message .= sprintf(
-                __('Currently running Git revision %1$s from the %2$s branch.'),
-                '<a target="_blank" href="' . $repobase . $fullrevision . '">'
-                . $revision . '</a>',
-                '<a target="_blank" href="' . $repobranchbase . $branch . '">'
-                . $branch . '</a>'
-            );
-        } else {
-            $message .= __('Git information missing!');
-        }
-
-        return PMA_Message::notice($message)->getDisplay();
-    }
-
-    /**
      * Renders the debug messages
      *
      * @return string
      */
-    public function getDebugMessage()
+    private function _getDebugMessage()
     {
         $retval = '';
         if (! empty($_SESSION['debug'])) {
@@ -120,53 +98,23 @@ class PMA_Footer
     /**
      * Returns the url of the current page
      *
-     * @param string|null $encode See PMA_URL_getCommon()
+     * @param mixed $encoding See PMA_generate_common_url()
      *
      * @return string
      */
-    public function getSelfUrl($encode = 'html')
+    public function getSelfUrl($encoding = null)
     {
         $db = ! empty($GLOBALS['db']) ? $GLOBALS['db'] : '';
         $table = ! empty($GLOBALS['table']) ? $GLOBALS['table'] : '';
         $target = ! empty($_REQUEST['target']) ? $_REQUEST['target'] : '';
-        $params = array(
-            'db' => $db,
-            'table' => $table,
-            'server' => $GLOBALS['server'],
-            'target' => $target
-        );
-        // needed for server privileges tabs
-        if (isset($_REQUEST['viewing_mode'])
-            && in_array($_REQUEST['viewing_mode'], array('server', 'db', 'table'))
-        ) {
-            $params['viewing_mode'] = $_REQUEST['viewing_mode'];
-        }
-        /*
-         * @todo    coming from server_privileges.php, here $db is not set,
-         *          add the following condition below when that is fixed
-         *          && $_REQUEST['checkprivsdb'] == $db
-         */
-        if (isset($_REQUEST['checkprivsdb'])
-        ) {
-            $params['checkprivsdb'] = $_REQUEST['checkprivsdb'];
-        }
-        /*
-         * @todo    coming from server_privileges.php, here $table is not set,
-         *          add the following condition below when that is fixed
-         *          && $_REQUEST['checkprivstable'] == $table
-         */
-        if (isset($_REQUEST['checkprivstable'])
-        ) {
-            $params['checkprivstable'] = $_REQUEST['checkprivstable'];
-        }
-        if (isset($_REQUEST['single_table'])
-            && in_array($_REQUEST['single_table'], array(true, false))
-        ) {
-            $params['single_table'] = $_REQUEST['single_table'];
-        }
-        return basename(PMA_getenv('SCRIPT_NAME')) . PMA_URL_getCommon(
-            $params,
-            $encode
+        return basename(PMA_getenv('SCRIPT_NAME')) . PMA_generate_common_url(
+            array(
+                'db' => $db,
+                'table' => $table,
+                'server' => $GLOBALS['server'],
+                'target' => $target
+            ),
+            $encoding
         );
     }
 
@@ -183,7 +131,7 @@ class PMA_Footer
         $retval .= '<div id="selflink" class="print_ignore">';
         $retval .= '<a href="' . $url . '"'
             . ' title="' . __('Open new phpMyAdmin window') . '" target="_blank">';
-        if (PMA_Util::showIcons('TabsMode')) {
+        if ($GLOBALS['cfg']['NavigationBarIconic']) {
             $retval .= PMA_Util::getImage(
                 'window-new.png',
                 __('Open new phpMyAdmin window')
@@ -203,17 +151,12 @@ class PMA_Footer
      */
     public function getErrorMessages()
     {
-        $retval = '<div class="clearfloat" id="pma_errors">';
+        $retval = '';
         if ($GLOBALS['error_handler']->hasDisplayErrors()) {
+            $retval .= '<div class="clearfloat" id="pma_errors">';
             $retval .= $GLOBALS['error_handler']->getDispErrors();
+            $retval .= '</div>';
         }
-        $retval .= '</div>';
-
-        /**
-         * Report php errors
-         */
-        $GLOBALS['error_handler']->reportErrors();
-
         return $retval;
     }
 
@@ -249,9 +192,9 @@ class PMA_Footer
 
     /**
      * Set the ajax flag to indicate whether
-     * we are servicing an ajax request
+     * we are sevicing an ajax request
      *
-     * @param bool $isAjax Whether we are servicing an ajax request
+     * @param bool $isAjax Whether we are sevicing an ajax request
      *
      * @return void
      */
@@ -316,29 +259,18 @@ class PMA_Footer
                             PMA_escapeJsString($menuHash)
                         )
                     );
-                }
-                if (PMA_getenv('SCRIPT_NAME')
-                    && ! $this->_isAjax
-                ) {
                     $url = $this->getSelfUrl();
                     $retval .= $this->_getSelfLink($url);
                 }
-                $retval .= $this->getDebugMessage();
+                $retval .= $this->_getDebugMessage();
                 $retval .= $this->getErrorMessages();
                 $retval .= $this->_scripts->getDisplay();
-                if ($GLOBALS['cfg']['DBG']['demo']) {
-                    $retval .= '<div id="pma_demo">';
-                    $retval .= $this->_getDemoMessage();
-                    $retval .= '</div>';
-                }
                 // Include possible custom footers
                 if (file_exists(CUSTOM_FOOTER_FILE)) {
-                    $retval .= '<div id="pma_footer">';
                     ob_start();
                     include CUSTOM_FOOTER_FILE;
                     $retval .= ob_get_contents();
                     ob_end_clean();
-                    $retval .= '</div>';
                 }
             }
             if (! $this->_isAjax) {

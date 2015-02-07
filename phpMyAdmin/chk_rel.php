@@ -7,12 +7,6 @@
  */
 
 require_once 'libraries/common.inc.php';
-
-// If request for fixing PMA tables.
-if (isset($_REQUEST['fix_pmadb'])) {
-    PMA_fixPMATables($GLOBALS['db']);
-}
-
 $response = PMA_Response::getInstance();
 $response->addHTML(
     PMA_getRelationsParamDiagnostic(PMA_getRelationsParam())

@@ -40,7 +40,7 @@ abstract class LongToIPv4TransformationsPlugin extends TransformationsPlugin
      * @param array  $options transformation options
      * @param string $meta    meta information
      *
-     * @return string
+     * @return void
      */
     public function applyTransformation($buffer, $options = array(), $meta = '')
     {
@@ -49,6 +49,21 @@ abstract class LongToIPv4TransformationsPlugin extends TransformationsPlugin
         }
 
         return long2ip($buffer);
+    }
+
+    /**
+     * This method is called when any PluginManager to which the observer
+     * is attached calls PluginManager::notify()
+     *
+     * @param SplSubject $subject The PluginManager notifying the observer
+     *                            of an update.
+     *
+     * @todo implement
+     * @return void
+     */
+    public function update (SplSubject $subject)
+    {
+        ;
     }
 
 

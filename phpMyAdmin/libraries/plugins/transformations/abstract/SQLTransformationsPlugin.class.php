@@ -39,15 +39,29 @@ abstract class SQLTransformationsPlugin extends TransformationsPlugin
      * @param array  $options transformation options
      * @param string $meta    meta information
      *
-     * @return string
+     * @return void
      */
     public function applyTransformation($buffer, $options = array(), $meta = '')
     {
-        // see PMA_highlightSQL()
-        $result = PMA_Util::formatSql($buffer);
+        $result = PMA_SQP_formatHtml(PMA_SQP_parse($buffer));
         // Need to clear error state not to break subsequent queries display.
         PMA_SQP_resetError();
         return $result;
+    }
+
+    /**
+     * This method is called when any PluginManager to which the observer
+     * is attached calls PluginManager::notify()
+     *
+     * @param SplSubject $subject The PluginManager notifying the observer
+     *                            of an update.
+     *
+     * @todo implement
+     * @return void
+     */
+    public function update (SplSubject $subject)
+    {
+        ;
     }
 
 

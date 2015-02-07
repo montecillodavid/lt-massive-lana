@@ -36,7 +36,7 @@ class PMA_ShapeFile extends ShapeFile
      * Loads ESRI shape data from the imported file
      *
      * @param string $FileName not used, it's here only to match the method
-     *                         signature of the method being overridden
+     *                         signature of the method being overidden
      *
      * @return void
      * @see ShapeFile::loadFromFile()
@@ -78,7 +78,7 @@ class PMA_ShapeFile extends ShapeFile
     /**
      * Loads geometry data from the ESRI shape file
      *
-     * @return boolean|void
+     * @return void
      * @see ShapeFile::_loadRecords()
      */
     function _loadRecords()

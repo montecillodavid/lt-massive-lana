@@ -17,8 +17,8 @@
  * // get simple success message 'Success'
  * $message = PMA_Message::success();
  *
- * // get special notice
- * $message = PMA_Message::notice(__('This is a localized notice'));
+ * // get special notice 'Some locale notice'
+ * $message = PMA_Message::notice('strSomeLocaleNotice');
  * </code>
  *
  * more advanced usage example:
@@ -29,7 +29,7 @@
  * // create another message, a hint, with a localized string which expects
  * // two parameters: $strSomeTooltip = 'Read the %smanual%s'
  * $hint = PMA_Message::notice('strSomeTooltip');
- * // replace placeholders with the following params
+ * // replace %d with the following params
  * $hint->addParam('[doc@cfg_Example]');
  * $hint->addParam('[/doc]');
  * // add this hint as a tooltip
@@ -177,7 +177,7 @@ class PMA_Message
     static public function success($string = '')
     {
         if (empty($string)) {
-            $string = __('Your SQL query has been executed successfully.');
+            $string = __('Your SQL query has been executed successfully');
         }
 
         return new PMA_Message($string, PMA_Message::SUCCESS);
@@ -342,7 +342,7 @@ class PMA_Message
 
     /**
      * returns whether this message is a success message or not
-     * and optionally makes this message a success message
+     * and optionaly makes this message a success message
      *
      * @param boolean $set Whether to make this message of SUCCESS type
      *
@@ -501,7 +501,7 @@ class PMA_Message
      */
     public function addMessage($message, $separator = ' ')
     {
-        if (/*overload*/mb_strlen($separator)) {
+        if (strlen($separator)) {
             $this->addedMessages[] = $separator;
         }
 
@@ -515,8 +515,8 @@ class PMA_Message
     /**
      * set all params at once, usually used in conjunction with string
      *
-     * @param array|string $params   parameters to set
-     * @param boolean      $sanitize whether to sanitize params
+     * @param array   $params   parameters to set
+     * @param boolean $sanitize whether to sanitize params
      *
      * @return void
      */
@@ -628,11 +628,11 @@ class PMA_Message
     {
         $message = $this->message;
 
-        if (0 === /*overload*/mb_strlen($message)) {
+        if (0 === strlen($message)) {
             $string = $this->getString();
             if (isset($GLOBALS[$string])) {
                 $message = $GLOBALS[$string];
-            } elseif (0 === /*overload*/mb_strlen($string)) {
+            } elseif (0 === strlen($string)) {
                 $message = '';
             } else {
                 $message = $string;
@@ -654,17 +654,6 @@ class PMA_Message
 
         return $message;
     }
-
-    /**
-    * Returns only message string without image & other HTML.
-    *
-    * @return string
-    */
-    public function getOnlyMessage()
-    {
-        return $this->message;
-    }
-
 
     /**
      * returns PMA_Message::$string
@@ -734,16 +723,17 @@ class PMA_Message
 
         return $this->isDisplayed;
     }
-
+    
     /**
      * Returns the message with corresponding image icon
-     *
+     * 
      * @param string $message the message(s)
-     *
+     * 
      * @return string message with icon
      */
     public function getMessageWithIcon($message)
     {
+        $image = '';
         if ('error' == $this->getLevel()) {
             $image = 's_error.png';
         } elseif ('success' == $this->getLevel()) {
@@ -753,7 +743,7 @@ class PMA_Message
         }
         $message = PMA_Message::notice(PMA_Util::getImage($image)) . " " . $message;
         return $message;
-
+        
     }
 }
 ?>

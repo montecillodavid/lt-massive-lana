@@ -28,10 +28,15 @@ $i++;
 /* Authentication type */
 $cfg['Servers'][$i]['auth_type'] = 'cookie';
 /* Server parameters */
-$cfg['Servers'][$i]['host'] = 'localhost';
+$cfg['Servers'][$i]['host'] = 'tunnel.pagodabox.com';
 $cfg['Servers'][$i]['connect_type'] = 'tcp';
 $cfg['Servers'][$i]['compress'] = false;
 $cfg['Servers'][$i]['AllowNoPassword'] = false;
+$cfg['Servers'][$i]['port'] = '3306';
+$cfg['Servers'][$i]['extension'] = 'mysqli';
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+$cfg['Servers'][$i]['user'] = 'cleopatra';
+$cfg['Servers'][$i]['password'] = '8HUO4Q1Z';
 
 /*
  * phpMyAdmin configuration storage settings.

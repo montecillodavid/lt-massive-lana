@@ -11,19 +11,19 @@ $i = 0;
 /* Server: pagoda [1] */
 $i++;
 $cfg['Servers'][$i]['verbose'] = 'pagoda';
-$cfg['Servers'][$i]['host'] = 'tunnel.pagodabox.com';
+$cfg['Servers'][$i]['host'] = $_SERVER['DATABASE1_HOST'];
 
-$cfg['Servers'][$i]['port'] = '';
+$cfg['Servers'][$i]['port'] = $_SERVER['DATABASE1_PORT'];;
 $cfg['Servers'][$i]['socket'] = '';
 $cfg['Servers'][$i]['connect_type'] = 'tcp';
 $cfg['Servers'][$i]['extension'] = 'mysqli';
 $cfg['Servers'][$i]['auth_type'] = 'cookie';
-$cfg['Servers'][$i]['user'] = 'cleopatra';
-$cfg['Servers'][$i]['password'] = '8HUO4Q1Z';
+$cfg['Servers'][$i]['user'] = $_SERVER['DATABASE1_USER'];
+$cfg['Servers'][$i]['password'] = $_SERVER['DATABASE1_PASS'];
 
 /* End of servers configuration */
 
-$cfg['Servers'][$i]['user'] = 'cleopatra';
+$cfg['Servers'][$i]['user'] = $_SERVER['DATABASE1_USER'];
 $cfg['Servers'][$i]['extension'] = 'mysqli';
 
 

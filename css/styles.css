@@ -1,0 +1,33 @@
+body {background:url(../img/background.jpg);}
+/*CLASS*/
+.container{
+margin: 70px 0 0 0;
+width: auto;
+}
+.img-rounded{
+height: 195px;
+}
+.btn-lg
+{
+height: 60px;
+width: 180px;
+}
+.list-group-item {width: 100%;}
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus 
+{
+border-color: none;
+}
+
+/*ID*/
+#inner-logo{height: 121px;}
+#indextopmenu
+{
+padding: 0 25px 0 0;
+}
+#bus-logo{
+   height: 18px;
+}
+#bus-logo: focus, #bus-logo: hover
+{
+background: url(../img/bus1.png);
+}

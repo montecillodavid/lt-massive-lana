@@ -7,7 +7,7 @@
 			define('DBPASS',  $_SERVER['DATABASE1_PASS']);	
 		}else{
 
-		}
+		} 
 
 	}else{
 		define('DBINFO',  'mysql:/host=localhost;dbname=lockoutfinal;');
